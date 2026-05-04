@@ -6,6 +6,7 @@ from .app import app
 from .city_card import Card
 from .toggle_switch_button import ToggleSwitch
 import os
+from .right_city_card import RightCityCard
 
 
 class MainWindow(widget.QMainWindow):
@@ -76,12 +77,72 @@ class MainWindow(widget.QMainWindow):
         self.RIGHT_FRAME = widget.QFrame(self.CENTRAL_FRAME)
         self.RIGHT_LAYOUT = widget.QVBoxLayout(self.RIGHT_FRAME)
         self.RIGHT_FRAME.setLayout(self.RIGHT_LAYOUT)
+        self.RIGHT_LAYOUT.setContentsMargins(0,0,0,0)
 
         self.CENTRAL_LAYOUT.addWidget(self.LEFT_FRAME)
         self.CENTRAL_LAYOUT.addWidget(self.RIGHT_FRAME, stretch=1)
 
+
         self.TOGGLE_SWITCH = ToggleSwitch(self.LEFT_FRAME)
         self.LEFT_LAYOUT.addWidget(self.TOGGLE_SWITCH, alignment=core.Qt.AlignmentFlag.AlignRight)
+
+        self.NAVIGATION_FRAME = widget.QFrame(self.RIGHT_FRAME)
+        self.NAVIGATION_FRAME.setFixedSize(core.QSize(788, 36))
+        self.RIGHT_LAYOUT.addWidget(self.NAVIGATION_FRAME, alignment=core.Qt.AlignmentFlag.AlignCenter)
+        self.NAVIGATION_FRAME.setStyleSheet("background-color:white")
+
+        self.NAVIGATION_LAYOUT = widget.QHBoxLayout(self.NAVIGATION_FRAME)
+        self.NAVIGATION_FRAME.setLayout(self.NAVIGATION_LAYOUT)
+        self.NAVIGATION_LAYOUT.setContentsMargins(20,20,20,20)
+        
+        self.SETTINGS_FRAME = widget.QFrame(self.NAVIGATION_FRAME)
+        self.NAVIGATION_LAYOUT.addWidget(self.SETTINGS_FRAME)
+
+        self.SEARCH_FRAME = widget.QFrame(self.NAVIGATION_FRAME)
+        self.NAVIGATION_LAYOUT.addWidget(self.SEARCH_FRAME)
+ 
+
+
+        self.RIGHT_CARDS_FRAME = widget.QFrame(self.RIGHT_FRAME)
+        self.RIGHT_CARDS_FRAME.setFixedSize(core.QSize(788, 724)) 
+        self.RIGHT_LAYOUT.addWidget(self.RIGHT_CARDS_FRAME, alignment=core.Qt.AlignmentFlag.AlignCenter)
+
+
+        self.RIGHT_CARDS_LAYOUT = widget.QVBoxLayout(self.RIGHT_CARDS_FRAME)
+        self.RIGHT_CARDS_FRAME.setLayout(self.RIGHT_CARDS_LAYOUT)
+        self.RIGHT_CARDS_LAYOUT.setContentsMargins(0,0,0,47)
+        self.RIGHT_CARDS_LAYOUT.setSpacing(10)
+
+
+        self.RIGHT_INFO_FRAME = widget.QFrame(self.RIGHT_CARDS_FRAME)
+        self.RIGHT_INFO_FRAME.setFixedSize(core.QSize(788, 303))
+        self.RIGHT_CARDS_LAYOUT.addWidget(self.RIGHT_INFO_FRAME)
+
+
+        self.RIGHT_INFO_LAYOUT = widget.QHBoxLayout(self.RIGHT_INFO_FRAME)
+        self.RIGHT_INFO_LAYOUT.setContentsMargins(0,0,0,0)
+
+        
+        
+        self.CITY_INFO_FRAME = RightCityCard(self.RIGHT_CARDS_FRAME)
+        self.RIGHT_INFO_LAYOUT.addWidget(self.CITY_INFO_FRAME)
+
+        self.CITY_TIME_FRAME = widget.QFrame(self.RIGHT_CARDS_FRAME)
+        self.CITY_TIME_FRAME.setFixedSize(core.QSize(390, 303))
+        self.CITY_TIME_FRAME.setStyleSheet("background-color: rgba(0,0,0,0.2); border: none; padding: 5px; border-radius: 5px")
+        self.RIGHT_INFO_LAYOUT.addWidget(self.CITY_TIME_FRAME)
+
+        
+        self.FORECAST_TIME = widget.QFrame(self.RIGHT_CARDS_FRAME)
+        self.RIGHT_CARDS_LAYOUT.addWidget(self.FORECAST_TIME)
+        self.FORECAST_TIME.setFixedSize(core.QSize(788, 157))
+        self.FORECAST_TIME.setStyleSheet("background-color: rgba(255,255,255,0.8); border: none; padding: 5px; border-radius: 5px")
+
+        self.FORECAST_GRAPH = widget.QFrame(self.RIGHT_CARDS_FRAME)
+        self.RIGHT_CARDS_LAYOUT.addWidget(self.FORECAST_GRAPH)
+        self.FORECAST_GRAPH.setFixedSize(core.QSize(788, 197))
+        self.FORECAST_GRAPH.setStyleSheet("background-color: rgba(255,255,255,0.8); border: none; padding: 5px; border-radius: 5px")
+        
 
 
         self.SCROLL_AREA = widget.QScrollArea(parent=self)
@@ -120,8 +181,6 @@ class MainWindow(widget.QMainWindow):
             self.selected_card.deselect()
         self.selected_card = card
 
-
-       
 
 window = MainWindow()
         

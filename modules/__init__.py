@@ -7,3 +7,4 @@ from .api import *
 from .api_request import *
 from .time import *
 from .title_bar_button import *
+from .right_city_card import *
