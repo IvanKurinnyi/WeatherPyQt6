@@ -5,6 +5,7 @@ import PyQt6.QtGui as gui
 from PyQt6.QtSvgWidgets import QSvgWidget
 from .api_request import api_request, API_KEY
 from .time import find_time
+from datetime import datetime
 
 
 class Card(widget.QFrame):
@@ -139,6 +140,11 @@ class Card(widget.QFrame):
         self.TIMER.timeout.connect(lambda: self.update_weather(city_name = city_name))
         self.TIMER.start(300000)
 
+        self.minute_update(city_name = city_name)
+        self.MINUTE_TIMER = core.QTimer(self)
+        self.MINUTE_TIMER.timeout.connect(lambda: self.minute_update(city_name = city_name))
+        self.MINUTE_TIMER.start(5000)
+
         self.update_style()
 
     def update_style(self):
@@ -163,18 +169,26 @@ class Card(widget.QFrame):
         self.selected.emit()
 
     def update_weather(self, city_name):
+        city_request = api_request(city=city_name, API_KEY=API_KEY)
+    
+        temp = str(round(city_request["main"]["temp"]))
+        temp_max = str(city_request["main"]["temp_max"])
+        temp_min = str(city_request["main"]["temp_min"])
+        description:str = city_request["weather"][0]["description"]
+        offset:int = int(city_request["timezone"])
+        self.UPPER_RIGHT_LABEL.setText(temp + "°")
+        self.BOTTOM_LEFT.setText(description.capitalize())
+        self.BOTTOM_RIGHT.setText(f"Макс.: {temp_max}°, мін.: {temp_min}°")
+        self.TIME_LABEL.setText(find_time(offset))
+        print("Погода оновлена!!!!")
+    
+    def minute_update(self, city_name):
+        now = datetime.now()
+        minutes = now.minute
+        if self.TIME_LABEL.text()[3:] != minutes:
             city_request = api_request(city=city_name, API_KEY=API_KEY)
-        
-            temp = str(round(city_request["main"]["temp"]))
-            temp_max = str(city_request["main"]["temp_max"])
-            temp_min = str(city_request["main"]["temp_min"])
-            description:str = city_request["weather"][0]["description"]
             offset:int = int(city_request["timezone"])
-            self.UPPER_RIGHT_LABEL.setText(temp + "°")
-            self.BOTTOM_LEFT.setText(description.capitalize())
-            self.BOTTOM_RIGHT.setText(f"Макс.: {temp_max}°, мін.: {temp_min}°")
             self.TIME_LABEL.setText(find_time(offset))
-            print("Погода оновлена!!!!")
 
 
 
