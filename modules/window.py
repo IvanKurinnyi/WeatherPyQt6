@@ -9,6 +9,8 @@ import os
 from .right_time_card import RightTimeCard
 from .right_city_card import RightCityCard
 from .top_search_bar import SearchBar
+from .forecast_time import ForeCastTime
+from .forecast_graphic import ForeCastGraph
 
 
 class MainWindow(widget.QMainWindow):
@@ -137,16 +139,13 @@ class MainWindow(widget.QMainWindow):
         self.RIGHT_INFO_LAYOUT.addWidget(self.CITY_TIME_CARD)
 
         
-        self.FORECAST_TIME = widget.QFrame(self.RIGHT_CARDS_FRAME)
+        self.FORECAST_TIME = ForeCastTime(city_name = "Paris")
         self.RIGHT_CARDS_LAYOUT.addWidget(self.FORECAST_TIME)
-        self.FORECAST_TIME.setFixedSize(core.QSize(788, 157))
-        self.FORECAST_TIME.setStyleSheet("background-color: rgba(255,255,255,0.8); border: none; padding: 5px; border-radius: 5px")
 
-        self.FORECAST_GRAPH = widget.QFrame(self.RIGHT_CARDS_FRAME)
+
+        self.FORECAST_GRAPH = ForeCastGraph(city_name=None)
         self.RIGHT_CARDS_LAYOUT.addWidget(self.FORECAST_GRAPH)
-        self.FORECAST_GRAPH.setFixedSize(core.QSize(788, 197))
-        self.FORECAST_GRAPH.setStyleSheet("background-color: rgba(255,255,255,0.8); border: none; padding: 5px; border-radius: 5px")
-        
+
 
 
         self.SCROLL_AREA = widget.QScrollArea(parent=self)
@@ -187,7 +186,8 @@ class MainWindow(widget.QMainWindow):
         city_name = card.city_name
         self.RIGHT_CITY_CARD.update_city_data(city_name)
         self.CITY_TIME_CARD.minute_update(city_name)
-
+        # self.FORECAST_TIME.up
+        # self.FORECAST_GRAPH.updat
         
 
 

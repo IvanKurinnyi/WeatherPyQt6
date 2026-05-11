@@ -69,6 +69,7 @@ class RightCityCard(widget.QFrame):
         self.WEATHER_ICON = QSvgWidget("media/right_frame/Cloudy.svg")
         self.WEATHER_ICON.setFixedSize(60, 60)
         
+        
         self.DEGREE = widget.QLabel("")
         self.DEGREE.setStyleSheet("font-size: 74px; color: white; font-family: 'Roboto';font-weight: 500; background: none;")
         
