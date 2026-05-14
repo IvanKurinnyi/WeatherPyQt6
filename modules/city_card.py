@@ -6,6 +6,7 @@ from PyQt6.QtSvgWidgets import QSvgWidget
 from .api_request import api_request, API_KEY
 from .time import find_time
 from datetime import datetime
+import requests
 
 
 class Card(widget.QFrame):
@@ -61,7 +62,9 @@ class Card(widget.QFrame):
         self.UPPER_UPPER_LAYOUT.setContentsMargins(0,0,0,0)
         self.UPPER_UPPER.setLayout(self.UPPER_UPPER_LAYOUT)
 
-        if city_name == "Дніпро":
+        current_city = self.city_request()
+
+        if city_name == current_city:
             self.ICON_FRAME = widget.QFrame(self.UPPER_UPPER)
             self.ICON_FRAME.setFixedSize(core.QSize(16,16))
             self.UPPER_UPPER_LAYOUT.addWidget(self.ICON_FRAME)
@@ -189,7 +192,14 @@ class Card(widget.QFrame):
             city_request = api_request(city=city_name, API_KEY=API_KEY)
             offset:int = int(city_request["timezone"])
             self.TIME_LABEL.setText(find_time(offset))
-
+            
+    def city_request(self):
+        try:
+            response = requests.get("https://ipinfo.io/json", timeout=5)
+            data_dict = response.json()
+            return data_dict.get("city", "Dnipro")
+        except Exception:
+            return "Dnipro"
 
 
 

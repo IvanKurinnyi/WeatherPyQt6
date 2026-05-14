@@ -11,6 +11,7 @@ from .right_city_card import RightCityCard
 from .top_search_bar import SearchBar
 from .forecast_time import ForeCastTime
 from .forecast_graphic import ForeCastGraph
+import requests
 
 
 class MainWindow(widget.QMainWindow):
@@ -162,8 +163,9 @@ class MainWindow(widget.QMainWindow):
         
         self.cards = []
         self.selected_card = None
+        current_city = self.city_request()
 
-        city_list = ["Київ", "Дніпро", "New York", "Lviv", "Esslingen", "Bad Herrenalb", "Munich", "Bratislava", "Paris"]
+        city_list = [current_city, "Dnipro", "Miami", "Kair"]
 
         for city in city_list:
             card = Card(parent = self.SCROLL_FRAME, city_name=city)
@@ -186,10 +188,17 @@ class MainWindow(widget.QMainWindow):
         city_name = card.city_name
         self.RIGHT_CITY_CARD.update_city_data(city_name)
         self.CITY_TIME_CARD.minute_update(city_name)
-        # self.FORECAST_TIME.up
-        # self.FORECAST_GRAPH.updat
-        
+        self.FORECAST_TIME.update_city_time(city_name)
+        self.FORECAST_GRAPH.update_forecast(city_name)
 
+
+    def city_request(self):
+        try:
+            response = requests.get("https://ipinfo.io/json", timeout=5)
+            data_dict = response.json()
+            return data_dict.get("city", "Dnipro")
+        except Exception:
+            return "Dnipro"
 
 window = MainWindow()
         
