@@ -77,7 +77,6 @@ class ForeCastGraph(widget.QFrame):
         self.update_forecast(city_name)
 
     def clear_layout(self, layout):
-        """Рекурсивно та безпечно видаляє всі віджети з макету"""
         while layout.count():
             item = layout.takeAt(0)
             child_widget = item.widget()
@@ -87,7 +86,6 @@ class ForeCastGraph(widget.QFrame):
                 self.clear_layout(item.layout())
 
     def update_forecast(self, city_name):
-        # 1. Запит даних
         try:
             api_data = forecast_request(city=city_name, API_KEY=API_KEY)
             raw_data = api_data["list"][:16]
@@ -125,9 +123,9 @@ class ForeCastGraph(widget.QFrame):
             icon_container.setFixedSize(core.QSize(block_width, 24))
             if item["is_main"] and item["icon"]:
                 icon_label = widget.QLabel(icon_container)
-                pix = gui.QPixmap(f"media/right_frame/weather_icons/{item['icon']}.svg")
-                icon_label.setPixmap(pix.scaled(20, 20, core.Qt.AspectRatioMode.KeepAspectRatio, core.Qt.TransformationMode.SmoothTransformation))
-                icon_label.setGeometry(int((block_width - 20) / 2), 2, 20, 20)
+                pix = gui.QPixmap(f"media/right_frame/weather_icons_white/{item['icon']}.svg")
+                icon_label.setPixmap(pix.scaled(16, 16, core.Qt.AspectRatioMode.KeepAspectRatio, core.Qt.TransformationMode.SmoothTransformation))
+                icon_label.setGeometry(int((block_width - 16) / 2), 2, 16, 16)
             self.ICON_LAYOUT.addWidget(icon_container)
 
             col_container = widget.QFrame()

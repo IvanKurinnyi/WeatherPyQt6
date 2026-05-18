@@ -26,8 +26,7 @@ class ForeCastTime(widget.QFrame):
         self.TOP_FRAME.setStyleSheet("background-color: none")
         self.TOP_LAYOUT = widget.QVBoxLayout(self.TOP_FRAME)
         self.TOP_LAYOUT.setContentsMargins(0, 0, 0, 0)
-        
-        self.TOP_TEXT = widget.QLabel("Хмарна погода до кінця дня")
+        self.TOP_TEXT = widget.QLabel("")
         self.TOP_TEXT.setStyleSheet("font-size:16px; color:white")
         self.TOP_LAYOUT.addWidget(self.TOP_TEXT)
         
@@ -66,12 +65,15 @@ class ForeCastTime(widget.QFrame):
         self.DOWN_LAYOUT.addWidget(self.RIGHT_BUTTON)
 
     def update_city_time(self, city_name):
-        """Загрузка данных и первичная отрисовка"""
+
         response = forecast_request(city=city_name, API_KEY=API_KEY)
+        description:str = response["list"][0]["weather"][0]["description"]
+        self.TOP_TEXT.setText(f"{description.capitalize()}")
         if response and "list" in response:
             self.ALL_FORECAST_DATA = response["list"]
             self.CURRENT_INDEX = 0
             self.render_forecast()
+
 
     def render_forecast(self):
         """Очистка и отрисовка текущего среза данных"""
@@ -101,7 +103,7 @@ class ForeCastTime(widget.QFrame):
             label_time.setAlignment(core.Qt.AlignmentFlag.AlignCenter)
             
             icon_label = widget.QLabel()
-            pix = gui.QPixmap(f"media/right_frame/weather_icons/{icon_code}.svg")
+            pix = gui.QPixmap(f"media/right_frame/weather_icons_white/{icon_code}.svg")
             icon_label.setPixmap(pix.scaled(30, 30, core.Qt.AspectRatioMode.KeepAspectRatio, core.Qt.TransformationMode.SmoothTransformation))
             icon_label.setAlignment(core.Qt.AlignmentFlag.AlignCenter)
             

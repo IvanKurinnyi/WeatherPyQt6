@@ -8,23 +8,23 @@ class TitleBar(widget.QFrame):
         super().__init__(*args, **kwargs)
 
         self.WIDTH = 1200
-        self.HEIGHT = 25
+        self.HEIGHT = 28
         self.setFixedSize(core.QSize(self.WIDTH,self.HEIGHT))
         self.setStyleSheet(f"background-color: rgba(0,0,0,0)")
         self.POSITION = self.pos()
 
         self.TITLE_LAYOUT = widget.QVBoxLayout()
-        self.TITLE_LAYOUT.setContentsMargins(0,0,0,0)
+        self.TITLE_LAYOUT.setContentsMargins(8,8,0,0)
         self.setLayout(self.TITLE_LAYOUT)
         
 
         self.BUTTON_FRAME = widget.QFrame(self)
         self.TITLE_LAYOUT.addWidget(self.BUTTON_FRAME)
-        self.BUTTON_FRAME.setFixedSize(core.QSize(70, 20))
+        self.BUTTON_FRAME.setFixedSize(core.QSize(75, 20))
         self.BUTTON_LAYOUT = widget.QHBoxLayout()
-        self.BUTTON_LAYOUT.setSpacing(5)
+        self.BUTTON_LAYOUT.setSpacing(8)
         self.BUTTON_FRAME.setLayout(self.BUTTON_LAYOUT)
-        self.BUTTON_LAYOUT.setContentsMargins(5, 0, 0, 0)
+        self.BUTTON_LAYOUT.setContentsMargins(0, 0, 0, 0)
         self.BUTTON_LAYOUT.setAlignment(core.Qt.AlignmentFlag.AlignCenter)
 
         self.EXIT = Button(self.BUTTON_FRAME,"media/title_bar/Close_Button.svg","media/title_bar/Close_Button_Hover.svg")
