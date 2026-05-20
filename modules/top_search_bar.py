@@ -75,8 +75,8 @@ class SearchBar(widget.QFrame):
             core.Qt.WindowType.FramelessWindowHint |
             core.Qt.WindowType.WindowStaysOnTopHint |
             core.Qt.WindowType.WindowDoesNotAcceptFocus)
-        self.POPUP.setAttribute(core.Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.POPUP.setStyleSheet("background-color:rgba(0,0,0,0.2);border-radius: 10px; border: none;") 
+        # self.POPUP.setAttribute(core.Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.POPUP.setStyleSheet("background-color:rgba(0,0,0,50);border-radius: 10px; border: none;") 
         self.POPUP.setMinimumWidth(261)
         
         
