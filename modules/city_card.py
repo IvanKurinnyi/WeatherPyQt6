@@ -161,12 +161,10 @@ class Card(widget.QFrame):
             self.BOTTOM_INFO.setStyleSheet(self.DESELECTED_STYLE)
     
     def deselect(self):
-        """Убирает выбор с карточки"""
         self.IS_CHOSEN = False
         self.update_style()
         
     def mousePressEvent(self, event):
-        """Обработчик клика по карточке"""
         self.IS_CHOSEN = True
         self.update_style()
         self.selected.emit()

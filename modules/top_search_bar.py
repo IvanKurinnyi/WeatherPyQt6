@@ -2,11 +2,16 @@ import PyQt6.QtWidgets as widget
 import PyQt6.QtCore as core
 import PyQt6.QtGui as gui
 from PyQt6.QtSvgWidgets import QSvgWidget
-
+from .find_town import find_cities_by_prefix
+from .read_write_json import create_json, read_json
 
 class SearchBar(widget.QFrame):
+    city_selected = core.pyqtSignal(str)
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        
+        self.CITIES_DATA = read_json("cities.json").get("data", [])
+        self.DYNAMIC_LABELS = []
 
         self.setFixedSize(core.QSize(788, 36))
         self.setStyleSheet("background-color:none")
@@ -87,16 +92,71 @@ class SearchBar(widget.QFrame):
 
         self.SEARCH_LINE.textChanged.connect(self.on_text_changed)
         widget.QApplication.instance().installEventFilter(self)
+        
+    def clear_old_results(self):
+        for lbl in self.DYNAMIC_LABELS:
+            self.POPUP_LAYOUT.removeWidget(lbl)
+            lbl.deleteLater()
+        self.DYNAMIC_LABELS.clear()
 
+    # def on_text_changed(self, text):
+    #     self.clear_old_results()
+        
+    #     if text.strip(): 
+    #         if not self.POPUP.isVisible():
+    #             self.POPUP.show()
+    #             pos = self.SEARCH.mapToGlobal(core.QPoint(0, self.SEARCH.height()))
+    #             self.POPUP.move(pos)
+    
+    #     else:              
+    #         self.POPUP.hide()
+    
     def on_text_changed(self, text):
+        self.clear_old_results()
+        
         if text.strip(): 
-            if not self.POPUP.isVisible():
-                self.POPUP.show()
+            found_cities = find_cities_by_prefix(self.CITIES_DATA, text, limit=5)
+            
+            if found_cities:
+                self.POPUP.resize(self.SEARCH.width(), 0) 
+                
+                for city in found_cities:
+                    btn = widget.QPushButton(city, self.POPUP)
+                    btn.setStyleSheet("""
+                        QPushButton {
+                            text-align: left; 
+                            background-color: transparent; 
+                            color: white; 
+                            padding: 6px 10px;
+                            border: none;
+                            font-size: 14px;
+                        }
+                        QPushButton:hover {
+                            background-color: rgba(255, 255, 255, 0.2);
+                        }
+                    """)
+                    btn.clicked.connect(lambda checked, c=city: self.city_selected.emit(c))
+                    
+                    self.POPUP_LAYOUT.addWidget(btn)
+                    self.DYNAMIC_LABELS.append(btn)
+
+                self.POPUP.adjustSize()
+
+                if not self.POPUP.isVisible():
+                    self.POPUP.show()
+                
                 pos = self.SEARCH.mapToGlobal(core.QPoint(0, self.SEARCH.height()))
                 self.POPUP.move(pos)
-    
+            else:
+                self.POPUP.hide()
         else:              
             self.POPUP.hide()
+            
+    def _on_city_clicked(self, city_name):
+        self.SEARCH_LINE.clear() # Очищаем строку поиска
+        self.POPUP.hide()        # Прячем результаты
+        # Отправляем сигнал в MainWindow
+        self.city_selected.emit(city_name)
             
     def eventFilter(self, obj, event):
         if event.type() == core.QEvent.Type.MouseButtonPress:
