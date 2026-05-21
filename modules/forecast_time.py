@@ -76,7 +76,6 @@ class ForeCastTime(widget.QFrame):
 
 
     def render_forecast(self):
-        """Очистка и отрисовка текущего среза данных"""
 
         while self.CENTRAL_LAYOUT.count():
             item = self.CENTRAL_LAYOUT.takeAt(0)

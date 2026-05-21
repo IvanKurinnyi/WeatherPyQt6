@@ -58,18 +58,12 @@ class MainWindow(widget.QMainWindow):
         self.CENTRAL_FRAME = widget.QFrame(self.CENTRAL_WIDGET)
         self.LAYOUT.addWidget(self.CENTRAL_FRAME)
         
-        # TitleBar добавляем после всех элементов, чтобы он был сверху
         self.TITLE_BAR = TitleBar(self)
         self.TITLE_BAR.setGeometry(0, 0, self.WIDTH, 20)
-        self.TITLE_BAR.raise_()  # Поверх других элементов
-
+        self.TITLE_BAR.raise_() 
         self.CENTRAL_LAYOUT = widget.QHBoxLayout(self.CENTRAL_FRAME)
         self.CENTRAL_LAYOUT.setContentsMargins(0, 0, 0, 0)
         self.CENTRAL_FRAME.setLayout(self.CENTRAL_LAYOUT)
-
-        
-
-
 
         self.LEFT_FRAME = widget.QFrame(self.CENTRAL_FRAME)
         self.LEFT_FRAME.setStyleSheet("background-color: rgba(0,0,0,0.4)")
@@ -92,24 +86,8 @@ class MainWindow(widget.QMainWindow):
         self.LEFT_LAYOUT.addWidget(self.TOGGLE_SWITCH, alignment=core.Qt.AlignmentFlag.AlignRight)
 
         self.SEARCH_BAR = SearchBar(self.RIGHT_FRAME)
+        self.SEARCH_BAR.city_selected.connect(self.add_new_city_card)
         self.RIGHT_LAYOUT.addWidget(self.SEARCH_BAR, alignment=core.Qt.AlignmentFlag.AlignCenter)
-
-        #self.NAVIGATION_FRAME = widget.QFrame(self.RIGHT_FRAME)
-        #self.NAVIGATION_FRAME.setFixedSize(core.QSize(788, 36))
-        #self.RIGHT_LAYOUT.addWidget(self.NAVIGATION_FRAME, alignment=core.Qt.AlignmentFlag.AlignCenter)
-        #self.NAVIGATION_FRAME.setStyleSheet("background-color:white")
-#
-        #self.NAVIGATION_LAYOUT = widget.QHBoxLayout(self.NAVIGATION_FRAME)
-        #self.NAVIGATION_FRAME.setLayout(self.NAVIGATION_LAYOUT)
-        #self.NAVIGATION_LAYOUT.setContentsMargins(20,20,20,20)
-        #
-        #self.SETTINGS_FRAME = widget.QFrame(self.NAVIGATION_FRAME)
-        #self.NAVIGATION_LAYOUT.addWidget(self.SETTINGS_FRAME)
-#
-        #self.SEARCH_FRAME = widget.QFrame(self.NAVIGATION_FRAME)
-        #self.NAVIGATION_LAYOUT.addWidget(self.SEARCH_FRAME)
- 
-
 
         self.RIGHT_CARDS_FRAME = widget.QFrame(self.RIGHT_FRAME)
         self.RIGHT_CARDS_FRAME.setFixedSize(core.QSize(788, 724)) 
@@ -179,9 +157,29 @@ class MainWindow(widget.QMainWindow):
             self.SCROLL_LAYOUT.addWidget(self.BOTTOM_LINE, alignment=core.Qt.AlignmentFlag.AlignCenter)
         self.SCROLL_LAYOUT.addStretch(1)
         
+    def add_new_city_card(self, city_name):
+        for card in self.cards:
+            if card.city_name.lower() == city_name.lower():
+                self._on_card_selected(card)
+                return
 
+        new_card = Card(parent=self.SCROLL_FRAME, city_name=city_name)
+        new_card.setFont(self.roboto_font)
+        new_card.selected.connect(lambda c=new_card: self._on_card_selected(c))
+        self.cards.append(new_card)
+
+        bottom_line = widget.QFrame(self.SCROLL_FRAME)
+        bottom_line.setFixedSize(core.QSize(314, 1))
+        bottom_line.setStyleSheet("background-color: rgba(255,255,255,0.2)")
+
+        insert_index = self.SCROLL_LAYOUT.count() - 1 
+        
+        self.SCROLL_LAYOUT.insertWidget(insert_index, new_card)
+        self.SCROLL_LAYOUT.insertWidget(insert_index + 1, bottom_line, alignment=core.Qt.AlignmentFlag.AlignCenter)
+
+        self._on_card_selected(new_card)
+        
     def _on_card_selected(self, card):
-        """Обработчик выбора карточки - деселектирует предыдущую выбранную карточку"""
         if self.selected_card is not None and self.selected_card != card:
             self.selected_card.deselect()
         self.selected_card = card

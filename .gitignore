@@ -1,5 +1,4 @@
-..gitignore
-.api
-.__pycache__
-.vscode
-..venv
+.api/
+__pycache__/
+.vscode/
+.venv/

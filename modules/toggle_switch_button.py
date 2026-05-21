@@ -4,7 +4,6 @@ import PyQt6.QtGui as gui
 
 class ToggleSwitch(widget.QFrame):
     TOGGLED = core.pyqtSignal(bool)
-    #это сигнал для других частей приложения
     def __init__(self, *args,**kwargs):
         super().__init__(*args,**kwargs)
         self.IS_CHECKED = False
@@ -30,16 +29,13 @@ class ToggleSwitch(widget.QFrame):
         self.ICON_LABEL.setStyleSheet("background: transparent")
 
         self.ANIMATION = core.QPropertyAnimation(self.ICON_LABEL, b"pos")
-        self.ANIMATION.setDuration(250)  # Длительность в миллисекундах (0.25 сек)
-        # Тип кривой: OutCubic дает плавное замедление в конце
+        self.ANIMATION.setDuration(250)
         self.ANIMATION.setEasingCurve(core.QEasingCurve.Type.OutCubic)
 
     def mousePressEvent(self, event):
         self.IS_CHECKED = not self.IS_CHECKED
-        #переключение состояния с помощью .эмит
         self.update_icon()
         self.TOGGLED.emit(self.IS_CHECKED)
-        #посылает сигнал с текущим состоянем(self.IS_CHECKED) другим виджетам(чтоб менять тему)
 
     def update_icon(self):
         if self.IS_CHECKED:
