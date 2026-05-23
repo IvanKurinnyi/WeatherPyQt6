@@ -8,19 +8,19 @@ class TitleBar(widget.QFrame):
         super().__init__(*args, **kwargs)
 
         self.WIDTH = 1200
-        self.HEIGHT = 28
+        self.HEIGHT = 30
         self.setFixedSize(core.QSize(self.WIDTH,self.HEIGHT))
         self.setStyleSheet(f"background-color: rgba(0,0,0,0)")
         self.POSITION = self.pos()
 
         self.TITLE_LAYOUT = widget.QVBoxLayout()
-        self.TITLE_LAYOUT.setContentsMargins(8,8,0,0)
+        self.TITLE_LAYOUT.setContentsMargins(8,4,0,0)
         self.setLayout(self.TITLE_LAYOUT)
         
 
         self.BUTTON_FRAME = widget.QFrame(self)
         self.TITLE_LAYOUT.addWidget(self.BUTTON_FRAME)
-        self.BUTTON_FRAME.setFixedSize(core.QSize(75, 20))
+        self.BUTTON_FRAME.setFixedSize(core.QSize(80, 20))
         self.BUTTON_LAYOUT = widget.QHBoxLayout()
         self.BUTTON_LAYOUT.setSpacing(8)
         self.BUTTON_FRAME.setLayout(self.BUTTON_LAYOUT)
@@ -33,7 +33,8 @@ class TitleBar(widget.QFrame):
         
         self.EXIT.setStyleSheet("border:none")
         self.MIN.setStyleSheet("border:none")  
-        self.MAX.setStyleSheet("border:none")  
+        self.MAX.setStyleSheet("border:none")
+         
 
         self.BUTTON_LAYOUT.addWidget(self.EXIT)
         self.BUTTON_LAYOUT.addWidget(self.MIN)

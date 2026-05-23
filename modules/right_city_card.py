@@ -76,10 +76,11 @@ class RightCityCard(widget.QFrame):
         
         self.WEATHER_ICON = widget.QLabel()
         self.TOP_PIXMAP = gui.QPixmap("media/right_frame/Cloudy.svg")
+        # self.WEATHER_ICON.resize(76, 76)
         #self.WEATHER_ICON.setPixmap(self.TOP_PIXMAP.scaled(76,76))
 
         #self.WEATHER_ICON = QSvgWidget("media/right_frame/Cloudy.svg")
-        #self.WEATHER_ICON.setFixedSize(60, 60)
+        
         
         
         self.DEGREE = widget.QLabel("")
@@ -116,6 +117,6 @@ class RightCityCard(widget.QFrame):
         #self.WEATHER_ICON.load(icon_path)
         #self.WEATHER_ICON = widget.QLabel()
         self.TOP_PIXMAP = gui.QPixmap(icon_path)
-        self.WEATHER_ICON.setPixmap(self.TOP_PIXMAP.scaled(76,76))
+        self.WEATHER_ICON.setPixmap(self.TOP_PIXMAP.scaled(95,95))
         self.STAT_LABEL.setText(description.capitalize())
         self.MINMAX_LABEL.setText(f"Макс.: {temp_max}°, мін.: {temp_min}°")
