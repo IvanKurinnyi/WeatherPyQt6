@@ -14,7 +14,7 @@ class ForeCastTime(widget.QFrame):
         
         self.ALL_FORECAST_DATA = [] 
         self.CURRENT_INDEX = 0      
-        self.ITEMS_TO_SHOW = 7
+        self.ITEMS_TO_SHOW = 10
 
         self.setStyleSheet("background-color: rgba(0,0,0,0.2); border: none; border-radius: 10px")
         
@@ -103,7 +103,7 @@ class ForeCastTime(widget.QFrame):
             
             icon_label = widget.QLabel()
             pix = gui.QPixmap(f"media/right_frame/weather_icons_white/{icon_code}.svg")
-            icon_label.setPixmap(pix.scaled(30, 30, core.Qt.AspectRatioMode.KeepAspectRatio, core.Qt.TransformationMode.SmoothTransformation))
+            icon_label.setPixmap(pix.scaled(24, 24, core.Qt.AspectRatioMode.KeepAspectRatio, core.Qt.TransformationMode.SmoothTransformation))
             icon_label.setAlignment(core.Qt.AlignmentFlag.AlignCenter)
             
 

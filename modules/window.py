@@ -12,7 +12,7 @@ from .top_search_bar import SearchBar
 from .forecast_time import ForeCastTime
 from .forecast_graphic import ForeCastGraph
 import requests
-
+from .read_write_json import read_json, create_json
 
 class MainWindow(widget.QMainWindow):
     def __init__(self, *args, **kwargs):
@@ -27,17 +27,17 @@ class MainWindow(widget.QMainWindow):
             font_family = gui.QFontDatabase.applicationFontFamilies(font_id)[0]
             
 
-        roboto_font = gui.QFont(font_family, 16, 900)
+        self.roboto_font = gui.QFont(font_family, 16, 900)
 
         self.WIDTH = 1200
-        self.HEIGHT = 800
+        self.HEIGHT = 830
         self.X = (app.primaryScreen().size().width() - self.WIDTH) // 2
         self.Y = (app.primaryScreen().size().height() - self.HEIGHT) // 2
         self.setGeometry(self.X, self.Y, self.WIDTH, self.HEIGHT)
 
         self.CENTRAL_WIDGET = widget.QWidget()
         
-        self.GRADIENT = gui.QLinearGradient(1200, 0, 0, 800)
+        self.GRADIENT = gui.QLinearGradient(1200, 0, 0, 830)
         self.GRADIENT.setColorAt(0.0, gui.QColor("#FFDF56"))
         self.GRADIENT.setColorAt(1.0, gui.QColor("#87CEFA"))
         
@@ -60,15 +60,17 @@ class MainWindow(widget.QMainWindow):
         
         self.TITLE_BAR = TitleBar(self)
         self.TITLE_BAR.setGeometry(0, 0, self.WIDTH, 20)
+        
         self.TITLE_BAR.raise_() 
         self.CENTRAL_LAYOUT = widget.QHBoxLayout(self.CENTRAL_FRAME)
         self.CENTRAL_LAYOUT.setContentsMargins(0, 0, 0, 0)
+        self.CENTRAL_LAYOUT.setSpacing(0)
         self.CENTRAL_FRAME.setLayout(self.CENTRAL_LAYOUT)
 
         self.LEFT_FRAME = widget.QFrame(self.CENTRAL_FRAME)
         self.LEFT_FRAME.setStyleSheet("background-color: rgba(0,0,0,0.4)")
         self.LEFT_LAYOUT = widget.QVBoxLayout(self.LEFT_FRAME)
-        self.LEFT_LAYOUT.setContentsMargins(20, 20, 20, 20)
+        self.LEFT_LAYOUT.setContentsMargins(20, 37, 20, 20)
         self.LEFT_LAYOUT.setSpacing(20)
         self.LEFT_FRAME.setLayout(self.LEFT_LAYOUT)
 
@@ -77,6 +79,7 @@ class MainWindow(widget.QMainWindow):
         self.RIGHT_LAYOUT = widget.QVBoxLayout(self.RIGHT_FRAME)
         self.RIGHT_FRAME.setLayout(self.RIGHT_LAYOUT)
         self.RIGHT_LAYOUT.setContentsMargins(0,0,0,0)
+        self.RIGHT_LAYOUT.setSpacing(0)
 
         self.CENTRAL_LAYOUT.addWidget(self.LEFT_FRAME)
         self.CENTRAL_LAYOUT.addWidget(self.RIGHT_FRAME, stretch=1)
@@ -86,8 +89,9 @@ class MainWindow(widget.QMainWindow):
         self.LEFT_LAYOUT.addWidget(self.TOGGLE_SWITCH, alignment=core.Qt.AlignmentFlag.AlignRight)
 
         self.SEARCH_BAR = SearchBar(self.RIGHT_FRAME)
-        self.SEARCH_BAR.city_selected.connect(self.add_new_city_card)
         self.RIGHT_LAYOUT.addWidget(self.SEARCH_BAR, alignment=core.Qt.AlignmentFlag.AlignCenter)
+
+        self.SEARCH_BAR.city_selected.connect(self.show_city_weather)
 
         self.RIGHT_CARDS_FRAME = widget.QFrame(self.RIGHT_FRAME)
         self.RIGHT_CARDS_FRAME.setFixedSize(core.QSize(788, 724)) 
@@ -110,11 +114,11 @@ class MainWindow(widget.QMainWindow):
 
         
         self.RIGHT_CITY_CARD = RightCityCard(self.RIGHT_CARDS_FRAME)
-        self.RIGHT_CITY_CARD.setFont(roboto_font)
+        self.RIGHT_CITY_CARD.setFont(self.roboto_font)
         self.RIGHT_INFO_LAYOUT.addWidget(self.RIGHT_CITY_CARD)
         
         self.CITY_TIME_CARD = RightTimeCard(self.RIGHT_CARDS_FRAME)
-        self.CITY_TIME_CARD.setFont(roboto_font)
+        self.CITY_TIME_CARD.setFont(self.roboto_font)
         self.RIGHT_INFO_LAYOUT.addWidget(self.CITY_TIME_CARD)
 
         
@@ -135,49 +139,53 @@ class MainWindow(widget.QMainWindow):
         
         self.SCROLL_FRAME = widget.QFrame(parent=self.SCROLL_AREA)
         self.SCROLL_LAYOUT = widget.QVBoxLayout()
-        self.SCROLL_LAYOUT.setSpacing(0)
+        self.SCROLL_LAYOUT.setSpacing(5)
         self.SCROLL_FRAME.setLayout(self.SCROLL_LAYOUT)
         self.SCROLL_AREA.setWidget(self.SCROLL_FRAME)
         
         self.cards = []
         self.selected_card = None
         current_city = self.city_request()
+        
+        # create_json(data=["Dnipro","Kyiv","Odessa"] ,name_file="city.json")
+        city = read_json(name_file="city.json")
 
-        city_list = [current_city, "Dnipro", "Miami", "Kair"]
+        
+        city_list = [current_city]
+        
+        for i in city:
+            city_list.append(i)
 
         for city in city_list:
-            card = Card(parent = self.SCROLL_FRAME, city_name=city)
-            card.setFont(roboto_font)
+            card = Card(parent = self.SCROLL_FRAME, city_name=city, scroll_frame=self.SCROLL_FRAME)
+            card.setFont(self.roboto_font)
             self.cards.append(card)
             card.selected.connect(lambda c=card: self._on_card_selected(c))
             self.SCROLL_LAYOUT.addWidget(card)
-            self.BOTTOM_LINE = widget.QFrame(self.SCROLL_FRAME)
-            self.BOTTOM_LINE.setFixedSize(core.QSize(314,1))
-            self.BOTTOM_LINE.setStyleSheet("background-color: rgba(255,255,255,0.2)")
-            self.SCROLL_LAYOUT.addWidget(self.BOTTOM_LINE, alignment=core.Qt.AlignmentFlag.AlignCenter)
+            card.line(scroll_layout=self.SCROLL_LAYOUT)
+            
         self.SCROLL_LAYOUT.addStretch(1)
         
-    def add_new_city_card(self, city_name):
+    
+    def show_city_weather(self, city_name):
+        self.current_preview_city = city_name 
+
+        self.RIGHT_CITY_CARD.update_city_data(city_name)
+        self.CITY_TIME_CARD.minute_update(city_name)
+        self.FORECAST_TIME.update_city_time(city_name)
+        self.FORECAST_GRAPH.update_forecast(city_name)
+
+
         for card in self.cards:
             if card.city_name.lower() == city_name.lower():
-                self._on_card_selected(card)
+                if self.selected_card and self.selected_card != card:
+                    self.selected_card.deselect()
+                self.selected_card = card
                 return
 
-        new_card = Card(parent=self.SCROLL_FRAME, city_name=city_name)
-        new_card.setFont(self.roboto_font)
-        new_card.selected.connect(lambda c=new_card: self._on_card_selected(c))
-        self.cards.append(new_card)
-
-        bottom_line = widget.QFrame(self.SCROLL_FRAME)
-        bottom_line.setFixedSize(core.QSize(314, 1))
-        bottom_line.setStyleSheet("background-color: rgba(255,255,255,0.2)")
-
-        insert_index = self.SCROLL_LAYOUT.count() - 1 
-        
-        self.SCROLL_LAYOUT.insertWidget(insert_index, new_card)
-        self.SCROLL_LAYOUT.insertWidget(insert_index + 1, bottom_line, alignment=core.Qt.AlignmentFlag.AlignCenter)
-
-        self._on_card_selected(new_card)
+        if self.selected_card:
+            self.selected_card.deselect()
+            self.selected_card = None
         
     def _on_card_selected(self, card):
         if self.selected_card is not None and self.selected_card != card:

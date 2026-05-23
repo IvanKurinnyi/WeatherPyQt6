@@ -12,7 +12,7 @@ import requests
 class Card(widget.QFrame):
     selected = pyqtSignal()
     
-    def __init__(self, city_name:str, *args, **kwargs):
+    def __init__(self, city_name:str,scroll_frame,*args, **kwargs):
         super().__init__(*args, **kwargs)
         self.WIDTH = 330
         self.HEIGHT = 90
@@ -147,18 +147,27 @@ class Card(widget.QFrame):
         self.MINUTE_TIMER = core.QTimer(self)
         self.MINUTE_TIMER.timeout.connect(lambda: self.minute_update(city_name = city_name))
         self.MINUTE_TIMER.start(5000)
+        
+        self.BOTTOM_LINE = widget.QFrame(scroll_frame)
+        self.BOTTOM_LINE.setFixedSize(core.QSize(314, 1))
+        self.BOTTOM_LINE.setStyleSheet("background-color: rgba(255,255,255,0.2); margin-top: -20px")
 
         self.update_style()
+        
+    def line(self, scroll_layout):
+        scroll_layout.addWidget(self.BOTTOM_LINE, alignment = core.Qt.AlignmentFlag.AlignCenter)
 
     def update_style(self):
         if self.IS_CHOSEN:
             self.INFO_FRAME.setStyleSheet(self.CHOSEN_STYLE)
             self.UPPER_INFO.setStyleSheet(self.DESELECTED_STYLE)
             self.BOTTOM_INFO.setStyleSheet(self.DESELECTED_STYLE)
+            self.BOTTOM_LINE.setStyleSheet("background-color:none")
         else:
             self.INFO_FRAME.setStyleSheet(self.DESELECTED_STYLE)
             self.UPPER_INFO.setStyleSheet(self.DESELECTED_STYLE)
             self.BOTTOM_INFO.setStyleSheet(self.DESELECTED_STYLE)
+            self.BOTTOM_LINE.setStyleSheet("background-color: rgba(255,255,255,0.2)")
     
     def deselect(self):
         self.IS_CHOSEN = False
