@@ -92,6 +92,7 @@ class MainWindow(widget.QMainWindow):
         self.RIGHT_LAYOUT.addWidget(self.SEARCH_BAR, alignment=core.Qt.AlignmentFlag.AlignCenter)
 
         self.SEARCH_BAR.city_selected.connect(self.show_city_weather)
+        self.SEARCH_BAR.city_added.connect(self.on_city_added)
 
         self.RIGHT_CARDS_FRAME = widget.QFrame(self.RIGHT_FRAME)
         self.RIGHT_CARDS_FRAME.setFixedSize(core.QSize(788, 724)) 
@@ -197,6 +198,20 @@ class MainWindow(widget.QMainWindow):
         self.FORECAST_TIME.update_city_time(city_name)
         self.FORECAST_GRAPH.update_forecast(city_name)
 
+    def on_city_added(self, city_name):
+        """Handle adding a new city to the left panel"""
+        # Create a new card for the city
+        card = Card(parent=self.SCROLL_FRAME, city_name=city_name, scroll_frame=self.SCROLL_FRAME)
+        card.setFont(self.roboto_font)
+        self.cards.append(card)
+        card.selected.connect(lambda c=card: self._on_card_selected(c))
+        
+        # Insert before the stretch item
+        self.SCROLL_LAYOUT.insertWidget(self.SCROLL_LAYOUT.count() - 1, card)
+        card.line(scroll_layout=self.SCROLL_LAYOUT)
+        
+        # Select the new card and show its weather
+        self.show_city_weather(city_name)
 
     def city_request(self):
         try:

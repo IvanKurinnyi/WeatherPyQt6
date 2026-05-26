@@ -7,11 +7,13 @@ from .read_write_json import create_json, read_json
 
 class SearchBar(widget.QFrame):
     city_selected = core.pyqtSignal(str)
+    city_added = core.pyqtSignal(str)
     
     def __init__(self,*args, **kwargs):
         super().__init__(*args, **kwargs)
         
         self.CITIES_DATA = read_json("cities.json").get("data", [])
+        self.CITY_NAMES = [city_obj.get('city', '').lower() for city_obj in self.CITIES_DATA]
         self.DYNAMIC_LABELS = []
 
         self.setFixedSize(core.QSize(788, 36))
@@ -76,6 +78,7 @@ class SearchBar(widget.QFrame):
         self.ADD_LAYOUT.addWidget(self.ADD_TEXT)
         self.LAYOUT.addWidget(self.ADD_BUTTON)
         self.ADD_BUTTON.hide()
+        self.ADD_BUTTON.clicked.connect(self.add_city)
        
 
         self.SEARCH = widget.QFrame(self)
@@ -104,13 +107,24 @@ class SearchBar(widget.QFrame):
         self.SEARCH_LINE.setPlaceholderText("Пошук")
         self.SEARCH_LAYOUT.addWidget(self.SEARCH_LINE)
 
-        self.CLEAR = widget.QLabel(self.SEARCH)
+        self.CLEAR = widget.QPushButton(self.SEARCH)
         self.CLEAR.setFixedSize(core.QSize(22,22))
-        self.CLEAR.setStyleSheet("background-color: none; margin-top: -3px;")
-        self.PIXMAP_CLEAR = gui.QPixmap("media/search_bar/Clear.svg")
-        self.CLEAR.setPixmap(self.PIXMAP_CLEAR)
+        self.CLEAR.setStyleSheet("""
+            QPushButton {
+                background-color: none; 
+                border: none;
+                padding: 0px;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 255, 255, 0.2);
+                border-radius: 3px;
+            }
+        """)
+        self.CLEAR.setIcon(gui.QIcon("media/search_bar/Clear.svg"))
+        self.CLEAR.setIconSize(core.QSize(22, 22))
         self.SEARCH_LAYOUT.addWidget(self.CLEAR, alignment=core.Qt.AlignmentFlag.AlignRight)
         self.CLEAR.hide()
+        self.CLEAR.clicked.connect(self.clear_search_line)
 
         self.POPUP = widget.QWidget(self) 
         self.POPUP.setObjectName("PopupMain")
@@ -174,13 +188,25 @@ class SearchBar(widget.QFrame):
             if item.widget():
                 item.widget().hide() 
                 item.widget().deleteLater()
-        self.ADD_BUTTON.show()
-        self.CLEAR.show()
 
     def on_text_changed(self, text):
         self.clear_old_results()
         
-        if text.strip(): 
+        if text.strip():
+            # Show clear button when there's text
+            self.CLEAR.show()
+            
+            # Check if text exists in cities.json
+            text_lower = text.strip().lower()
+            city_exists = text_lower in self.CITY_NAMES
+            
+            # Show "Додати" button only if city exists in the database
+            if city_exists:
+                self.ADD_BUTTON.show()
+            else:
+                self.ADD_BUTTON.hide()
+            
+            # Show search results
             found_cities = find_cities_by_prefix(self.CITIES_DATA, text, limit=5)
             
             if found_cities:
@@ -216,13 +242,17 @@ class SearchBar(widget.QFrame):
                 
                 pos = self.SEARCH.mapToGlobal(core.QPoint(0, self.SEARCH.height()))
                 self.POPUP.move(pos)
+        else:
+            # Hide buttons when text is empty
+            self.CLEAR.hide()
+            self.ADD_BUTTON.hide()
             
     def _on_city_clicked(self, city_name):
         self.SEARCH_LINE.blockSignals(True)
         self.SEARCH_LINE.setText(city_name)
         self.SEARCH_LINE.blockSignals(False)
-        self.ADD_BUTTON.show()
         self.CLEAR.show()
+        self.ADD_BUTTON.show()
         
         self.POPUP.hide()       
         self.city_selected.emit(city_name)
@@ -238,3 +268,41 @@ class SearchBar(widget.QFrame):
                     self.POPUP.hide()
                     
         return super().eventFilter(obj, event)
+
+    def clear_search_line(self):
+        """Clear the search line and hide buttons"""
+        self.SEARCH_LINE.blockSignals(True)
+        self.SEARCH_LINE.setText("")
+        self.SEARCH_LINE.blockSignals(False)
+        self.CLEAR.hide()
+        self.ADD_BUTTON.hide()
+        self.POPUP.hide()
+
+    def add_city(self):
+        """Add the city from search line to city.json and update cards"""
+        city_name = self.SEARCH_LINE.text().strip()
+        
+        if not city_name:
+            return
+        
+        # Read current cities from city.json
+        try:
+            cities = read_json("city.json")
+        except:
+            cities = []
+        
+        # Check if city already exists
+        if any(c.lower() == city_name.lower() for c in cities):
+            return
+        
+        # Add new city
+        cities.append(city_name)
+        
+        # Write back to city.json
+        create_json(cities, "city.json")
+        
+        # Clear the search line
+        self.clear_search_line()
+        
+        # Emit signal to update cards
+        self.city_added.emit(city_name)
