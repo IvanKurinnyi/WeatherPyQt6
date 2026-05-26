@@ -37,6 +37,8 @@ class SearchBar(widget.QFrame):
         self.SETTINGS_LAYOUT.setAlignment(core.Qt.AlignmentFlag.AlignCenter)
         self.SETTINGS_LAYOUT.setSpacing(0)
         self.S_LAYOUT.addWidget(self.SETTINGS)
+        
+
 
         self.SETTINGS_ICON = QSvgWidget("media/right_frame/settings.svg", self.SETTINGS)
         self.SETTINGS_ICON.setStyleSheet("background-color:none;")
@@ -175,6 +177,122 @@ class SearchBar(widget.QFrame):
         self.SEARCH_LINE.textChanged.connect(self.on_text_changed)
         widget.QApplication.instance().installEventFilter(self)
         
+        self.SETTINGS_POPUP = widget.QFrame()
+        self.SETTINGS_POPUP.setFixedSize(core.QSize(790, 688))
+        self.SETTINGS_POPUP.setWindowFlags(
+            core.Qt.WindowType.Window | 
+            core.Qt.WindowType.FramelessWindowHint |
+            core.Qt.WindowType.WindowStaysOnTopHint |
+            core.Qt.WindowType.WindowDoesNotAcceptFocus |
+            core.Qt.WindowType.NoDropShadowWindowHint
+        )
+        self.SETTINGS_POPUP.setStyleSheet("background-color: none; border-radius: 10px; border: none;")
+        self.SETTINGS_POPUP.raise_()
+        self.SETTINGS_POPUP_FRAME = widget.QFrame(self.SETTINGS_POPUP)
+        self.SETTINGS_POPUP_FRAME.setStyleSheet("background-color: rgba(0, 0, 0, 0.1); border-radius: 10px; border: none;")
+        
+        self.SETTINGS_POPUP_LAYOUT = widget.QVBoxLayout(self.SETTINGS_POPUP_FRAME)
+        self.SETTINGS_POPUP_LAYOUT.setContentsMargins(24,24,24,24)
+        self.SETTINGS_POPUP_LAYOUT.setSpacing(34)
+        self.TITLE_SETT = widget.QFrame()
+        self.TITLE_SETT.setStyleSheet("background-color: none")
+        self.TITLE_SETT.setFixedSize(core.QSize(742, 28))
+        self.SETTINGS_POPUP_LAYOUT.addWidget(self.TITLE_SETT, alignment=core.Qt.AlignmentFlag.AlignCenter)
+        
+        self.T_LAYOUT = widget.QHBoxLayout(self.TITLE_SETT)
+        self.T_LAYOUT.setContentsMargins(0,0,0,0)
+
+        self.TITLE_LABEL = widget.QLabel("Налаштування")
+        self.TITLE_LABEL.setStyleSheet("font-size:24px; font-weight:500")
+        self.T_LAYOUT.addWidget(self.TITLE_LABEL)
+        
+        
+        self.CLOSE_BUTTON = widget.QPushButton()
+        self.CLOSE_BUTTON.setIcon(gui.QIcon("media/search_bar/close.svg"))
+        self.CLOSE_BUTTON.setIconSize(core.QSize(16, 16))
+        self.T_LAYOUT.addWidget(self.CLOSE_BUTTON, alignment=core.Qt.AlignmentFlag.AlignRight)
+
+        self.CENTRAL_FRAME = widget.QFrame()
+        self.CENTRAL_FRAME.setStyleSheet("background-color:none")
+        self.CENTRAL_FRAME.setFixedSize(core.QSize(742, 578))
+        self.SETTINGS_POPUP_LAYOUT.addWidget(self.CENTRAL_FRAME, alignment=core.Qt.AlignmentFlag.AlignCenter)
+
+        self.CENTRAL_LAYOUT = widget.QHBoxLayout(self.CENTRAL_FRAME)
+        self.CENTRAL_LAYOUT.setContentsMargins(0,0,0,0)
+        self.CENTRAL_LAYOUT.setSpacing(24)
+
+        self.LEFT_SETTINGS_FRAME = widget.QFrame()
+        self.LEFT_SETTINGS_FRAME.setStyleSheet("background-color: none; border-radius: 0px; border-right: 1px solid rgba(255, 255, 255, 0.2)")
+        self.LEFT_SETTINGS_FRAME.setFixedSize(core.QSize(174, 578))
+        self.LEFT_SETTINGS_LAYOUT = widget.QVBoxLayout(self.LEFT_SETTINGS_FRAME)
+        self.LEFT_SETTINGS_LAYOUT.setAlignment(core.Qt.AlignmentFlag.AlignTop)
+        self.LEFT_SETTINGS_LAYOUT.setContentsMargins(0, 0, 0, 0)
+        self.LEFT_SETTINGS_LAYOUT.setSpacing(0)
+        self.CENTRAL_LAYOUT.addWidget(self.LEFT_SETTINGS_FRAME)
+        
+        self.CITY_SEARCH = widget.QPushButton("Пошук міста")
+        self.CITY_SEARCH.setStyleSheet("background-color: none; border-radius: 0px; font-size:16px; font-weight:400; border:0px; text-align: left; padding-left: 8px;")
+        self.CITY_SEARCH.setFixedSize(core.QSize(158, 35))
+        
+        self.RESOLUTION = widget.QPushButton("Розмір Додатку")
+        self.RESOLUTION.setStyleSheet("background-color: none; border-radius: 0px; font-size:16px; font-weight:400; border:0px; text-align: left; padding-left: 8px;")
+        self.RESOLUTION.setFixedSize(core.QSize(158, 35))
+
+        self.LANGUAGE = widget.QPushButton("Мова додатку")
+        self.LANGUAGE.setStyleSheet("background-color: none; border-radius: 0px; font-size:16px; font-weight:400; border:0px; text-align: left; padding-left: 8px;")
+        self.LANGUAGE.setFixedSize(core.QSize(158, 35))
+
+        self.IMG_LIST = widget.QPushButton("Список зображень")
+        self.IMG_LIST.setStyleSheet("background-color: none; border-radius: 0px; font-size:16px; font-weight:400; border:0px; text-align: left; padding-left: 8px;")
+        self.IMG_LIST.setFixedSize(core.QSize(158, 35))
+
+    
+
+        self.LEFT_SETTINGS_LAYOUT.addWidget(self.CITY_SEARCH)
+        self.LEFT_SETTINGS_LAYOUT.addWidget(self.RESOLUTION)
+        self.LEFT_SETTINGS_LAYOUT.addWidget(self.LANGUAGE)
+        self.LEFT_SETTINGS_LAYOUT.addWidget(self.IMG_LIST)
+        
+        self.RIGHT_FRAME = widget.QFrame()
+        self.RIGHT_FRAME.setStyleSheet("background-color:none")
+        self.RIGHT_FRAME.setFixedSize(core.QSize(544, 578))
+        self.CENTRAL_LAYOUT.addWidget(self.RIGHT_FRAME)
+        
+        self.CITY_SEARCH_FRAME = widget.QFrame(self.RIGHT_FRAME)
+        self.CITY_SEARCH_LAYOUT = widget.QVBoxLayout(self.CITY_SEARCH_FRAME)
+        self.CITY_SEARCH_LABEL = widget.QLabel("Пошук міста", self.CITY_SEARCH_FRAME)
+        self.CITY_SEARCH_LABEL.setStyleSheet("background-color: none; color: white; font-size: 18px; font-weight: 400;")
+        self.CITY_SEARCH_LAYOUT.addWidget(self.CITY_SEARCH_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
+        self.CITY_SEARCH_FRAME.hide()
+
+        self.RESOLUTION_FRAME = widget.QFrame(self.RIGHT_FRAME)
+        self.RESOLUTION_LAYOUT = widget.QVBoxLayout(self.RESOLUTION_FRAME)
+        self.RESOLUTION_LABEL = widget.QLabel("Розмір додатку", self.RESOLUTION_FRAME)
+        self.RESOLUTION_LABEL.setStyleSheet("background-color: none; color: white; font-size: 18px; font-weight: 400;")
+        self.RESOLUTION_LAYOUT.addWidget(self.RESOLUTION_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
+        self.RESOLUTION_FRAME.hide()
+
+        self.LANGUAGE_FRAME = widget.QFrame(self.RIGHT_FRAME)
+        self.LANGUAGE_LAYOUT = widget.QVBoxLayout(self.LANGUAGE_FRAME)
+        self.LANGUAGE_LABEL = widget.QLabel("Мова додатку", self.LANGUAGE_FRAME)
+        self.LANGUAGE_LABEL.setStyleSheet("background-color: none; color: white; font-size: 18px; font-weight: 400;")
+        self.LANGUAGE_LAYOUT.addWidget(self.LANGUAGE_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
+        self.LANGUAGE_FRAME.hide()
+
+        self.IMG_LIST_FRAME = widget.QFrame(self.RIGHT_FRAME)
+        self.IMG_LIST_LAYOUT = widget.QVBoxLayout(self.IMG_LIST_FRAME)
+        self.IMG_LIST_LABEL = widget.QLabel("Список зображень", self.IMG_LIST_FRAME)
+        self.IMG_LIST_LABEL.setStyleSheet("background-color: none; color: white; font-size: 18px; font-weight: 400;")
+        self.IMG_LIST_LAYOUT.addWidget(self.IMG_LIST_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
+        self.IMG_LIST_FRAME.hide()
+
+        self.SETTINGS.clicked.connect(self.show_settings)
+        self.CLOSE_BUTTON.clicked.connect(self.close_settings)
+        self.CITY_SEARCH.clicked.connect(self.city_search)
+        self.RESOLUTION.clicked.connect(self.resolution_settings)
+        self.LANGUAGE.clicked.connect(self.language_settings)
+        self.IMG_LIST.clicked.connect(self.image_list)    
+
     def clear_old_results(self):
         for lbl in self.DYNAMIC_LABELS:
             lbl.hide()
@@ -193,14 +311,11 @@ class SearchBar(widget.QFrame):
         self.clear_old_results()
         
         if text.strip():
-            # Show clear button when there's text
             self.CLEAR.show()
             
-            # Check if text exists in cities.json
             text_lower = text.strip().lower()
             city_exists = text_lower in self.CITY_NAMES
             
-            # Show "Додати" button only if city exists in the database
             if city_exists:
                 self.ADD_BUTTON.show()
             else:
@@ -243,7 +358,6 @@ class SearchBar(widget.QFrame):
                 pos = self.SEARCH.mapToGlobal(core.QPoint(0, self.SEARCH.height()))
                 self.POPUP.move(pos)
         else:
-            # Hide buttons when text is empty
             self.CLEAR.hide()
             self.ADD_BUTTON.hide()
             
@@ -270,7 +384,6 @@ class SearchBar(widget.QFrame):
         return super().eventFilter(obj, event)
 
     def clear_search_line(self):
-        """Clear the search line and hide buttons"""
         self.SEARCH_LINE.blockSignals(True)
         self.SEARCH_LINE.setText("")
         self.SEARCH_LINE.blockSignals(False)
@@ -279,30 +392,64 @@ class SearchBar(widget.QFrame):
         self.POPUP.hide()
 
     def add_city(self):
-        """Add the city from search line to city.json and update cards"""
         city_name = self.SEARCH_LINE.text().strip()
         
         if not city_name:
             return
-        
-        # Read current cities from city.json
+
         try:
             cities = read_json("city.json")
         except:
             cities = []
-        
-        # Check if city already exists
+
         if any(c.lower() == city_name.lower() for c in cities):
             return
         
-        # Add new city
         cities.append(city_name)
         
-        # Write back to city.json
         create_json(cities, "city.json")
         
-        # Clear the search line
         self.clear_search_line()
         
-        # Emit signal to update cards
         self.city_added.emit(city_name)
+        
+    def show_settings(self):
+        self.SETTINGS_POPUP.show()
+        
+    def close_settings(self):
+        self.SETTINGS_POPUP.hide()
+
+
+        
+    def clear(self):
+        self.CITY_SEARCH.setStyleSheet("background-color: none; border-radius: 0px; font-size:16px; font-weight:400; border:none; text-align: left; padding-left: 8px;")
+        self.RESOLUTION.setStyleSheet("background-color: none; border-radius: 0px; font-size:16px; font-weight:400; border:none; text-align: left; padding-left: 8px;")
+        self.LANGUAGE.setStyleSheet("background-color: none; border-radius: 0px; font-size:16px; font-weight:400; border:none; text-align: left; padding-left: 8px;")
+        self.IMG_LIST.setStyleSheet("background-color: none; border-radius: 0px; font-size:16px; font-weight:400; border:none; text-align: left; padding-left: 8px;")
+
+        self.CITY_SEARCH_FRAME.hide()
+        self.RESOLUTION_FRAME.hide()
+        self.LANGUAGE_FRAME.hide()
+        self.IMG_LIST_FRAME.hide()
+
+
+
+    def city_search(self):
+        self.clear()
+        self.CITY_SEARCH.setStyleSheet("background-color: rgba(0,0,0,0.2); border-radius: 0px; font-size:16px; font-weight:400; border:none; text-align: left; padding-left: 8px;")
+        self.CITY_SEARCH_FRAME.show()
+    
+    def resolution_settings(self):
+        self.clear()
+        self.RESOLUTION.setStyleSheet("background-color: rgba(0,0,0,0.2); border-radius: 0px; font-size:16px; font-weight:400; border:none; text-align: left; padding-left: 8px;")
+        self.RESOLUTION_FRAME.show()
+
+    def language_settings(self):
+        self.clear()
+        self.LANGUAGE.setStyleSheet("background-color: rgba(0,0,0,0.2); border-radius: 0px; font-size:16px; font-weight:400; border:none; text-align: left; padding-left: 8px;")
+        self.LANGUAGE_FRAME.show()
+
+    def image_list(self):
+        self.clear()
+        self.IMG_LIST.setStyleSheet("background-color: rgba(0,0,0,0.2); border-radius: 0px; font-size:16px; font-weight:400; border:none; text-align: left; padding-left: 8px;")
+        self.IMG_LIST_FRAME.show()

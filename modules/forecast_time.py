@@ -1,8 +1,8 @@
 import PyQt6.QtWidgets as widget
 import PyQt6.QtCore as core
 import PyQt6.QtGui as gui
-from .api_request import forecast_request
-from .api import API_KEY
+from .api_request import forecast_request, API_KEY
+
 
 class ForeCastTime(widget.QFrame):
     def __init__(self, city_name, *args, **kwargs):
