@@ -2,6 +2,8 @@ import PyQt6.QtWidgets as widget
 import PyQt6.QtCore as core
 import PyQt6.QtGui as gui
 from .title_bar_button import Button
+from PyQt6.QtWidgets import QApplication
+
 
 class TitleBar(widget.QFrame):
     def __init__(self, *args, **kwargs):
@@ -47,9 +49,10 @@ class TitleBar(widget.QFrame):
 
 
     def handleClose(self):
-        self.window().close()
+        QApplication.closeAllWindows()
     def handleMinimize(self):
         self.window().showMinimized()
+        self.window().SEARCH_BAR.SETTINGS_POPUP.hide()
     def handleMaximize(self):
         if self.window().isMaximized():
             self.window().showNormal()

@@ -1,3 +1,6 @@
+import dotenv
+dotenv.load_dotenv()
+
 from modules import app, window
 
 def main():

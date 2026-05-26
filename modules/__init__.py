@@ -3,7 +3,6 @@ from .window import *
 from .city_card import *
 from .title_bar import *
 from .toggle_switch_button import *
-from .api import *
 from .api_request import *
 from .time import *
 from .title_bar_button import *

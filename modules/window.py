@@ -88,7 +88,7 @@ class MainWindow(widget.QMainWindow):
         self.TOGGLE_SWITCH = ToggleSwitch(self.LEFT_FRAME)
         self.LEFT_LAYOUT.addWidget(self.TOGGLE_SWITCH, alignment=core.Qt.AlignmentFlag.AlignRight)
 
-        self.SEARCH_BAR = SearchBar(self.RIGHT_FRAME)
+        self.SEARCH_BAR = SearchBar(parent = self.RIGHT_FRAME)
         self.RIGHT_LAYOUT.addWidget(self.SEARCH_BAR, alignment=core.Qt.AlignmentFlag.AlignCenter)
 
         self.SEARCH_BAR.city_selected.connect(self.show_city_weather)
