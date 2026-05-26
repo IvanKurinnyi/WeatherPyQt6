@@ -1,5 +1,4 @@
-.api/
 __pycache__/
 .vscode/
 .venv/
-.env/
+.env
