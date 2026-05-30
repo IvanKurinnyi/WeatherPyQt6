@@ -4,6 +4,7 @@ import PyQt6.QtGui as gui
 from PyQt6.QtSvgWidgets import QSvgWidget
 from .find_town import find_cities_by_prefix
 from .read_write_json import create_json, read_json
+from .combobox import ComboBox
 
 class SearchBar(widget.QFrame):
     city_selected = core.pyqtSignal(str)
@@ -242,6 +243,9 @@ class SearchBar(widget.QFrame):
         self.LANGUAGE.setStyleSheet("background-color: none; border-radius: 0px; font-size:16px; font-weight:400; border:0px; text-align: left; padding-left: 8px;")
         self.LANGUAGE.setFixedSize(core.QSize(158, 35))
 
+        
+
+
         self.IMG_LIST = widget.QPushButton("Список зображень")
         self.IMG_LIST.setStyleSheet("background-color: none; border-radius: 0px; font-size:16px; font-weight:400; border:0px; text-align: left; padding-left: 8px;")
         self.IMG_LIST.setFixedSize(core.QSize(158, 35))
@@ -260,30 +264,212 @@ class SearchBar(widget.QFrame):
         
         self.CITY_SEARCH_FRAME = widget.QFrame(self.RIGHT_FRAME)
         self.CITY_SEARCH_LAYOUT = widget.QVBoxLayout(self.CITY_SEARCH_FRAME)
+        self.CITY_SEARCH_LAYOUT.setContentsMargins(0,0,0,0)
         self.CITY_SEARCH_LABEL = widget.QLabel("Пошук міста", self.CITY_SEARCH_FRAME)
         self.CITY_SEARCH_LABEL.setStyleSheet("background-color: none; color: white; font-size: 18px; font-weight: 400;")
         self.CITY_SEARCH_LAYOUT.addWidget(self.CITY_SEARCH_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
+        
+        self.MAP_FRAME = widget.QFrame()
+        self.MAP_FRAME.setFixedSize(core.QSize(544,256))
+        # self.MAP_FRAME.setStyleSheet("background-color:purple")
+        self.CITY_SEARCH_LAYOUT.addWidget(self.MAP_FRAME)
+        self.MAP_LAYOUT = widget.QHBoxLayout(self.MAP_FRAME)
+        self.MAP_LAYOUT.setContentsMargins(0,0,0,0)
+        self.MAP_LAYOUT.setSpacing(16)
+        self.COUNTRY_FRAME = widget.QLabel()
+        self.COUNTRY_FRAME.setFixedSize(core.QSize(239,256))
+        self.MAP = widget.QFrame()
+        self.MAP.setFixedSize(core.QSize(289,256))
+        self.MAP.setStyleSheet("background-color:green")
+        self.MAP_LAYOUT.addWidget(self.COUNTRY_FRAME)
+        self.MAP_LAYOUT.addWidget(self.MAP)
+        
+        self.COUNTRY_LAYOUT = widget.QVBoxLayout(self.COUNTRY_FRAME)
+        self.COUNTRY_LAYOUT.setContentsMargins(0,0,0,0)
+        self.COUNTRY_LAYOUT.setSpacing(8)
+        
+        self.COUNTRY_LABEL = widget.QLabel("Країна")
+        self.COUNTRY_LABEL.setStyleSheet("color:white; font-weight:500;font-size:14px;text-align: left;")
+        self.COUNTRY_LABEL.setFixedSize(core.QSize(249,14))
+        self.COUNTRY_LAYOUT.addWidget(self.COUNTRY_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
+        self.COUNTRY_COMBOBOX = ComboBox(layout=self.COUNTRY_LAYOUT, items=["Виберіть країну", "Ukraine", "USA", "England"])
+        
+        self.CITY_LABEL = widget.QLabel("Місто")
+        self.CITY_LABEL.setStyleSheet("color:white; font-weight:500;font-size:14px;text-align: left;")
+        self.CITY_LABEL.setFixedSize(core.QSize(249,14))
+        self.COUNTRY_LAYOUT.addWidget(self.CITY_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
+        self.CITY_COMBOBOX = ComboBox(layout=self.COUNTRY_LAYOUT, items=["Виберіть місто", "Dnipro", "Kharkiv", "Kyiv"])
+        
+        self.COORDS_LABEL = widget.QLabel("Координати")
+        self.COORDS_LABEL.setStyleSheet("color:white; font-weight:500;font-size:14px;text-align: left;")
+        self.COORDS_LABEL.setFixedSize(core.QSize(249,14))
+        self.COUNTRY_LAYOUT.addWidget(self.COORDS_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
+        self.COORDS_QLineEdit = widget.QLineEdit()
+        self.COORDS_QLineEdit.setFixedSize(core.QSize(239,32))
+        self.COORDS_QLineEdit.setStyleSheet("""
+            QLineEdit {
+                background-color: #ffffff;
+                border: none;
+                border-radius: 4px;
+                color: rgba(113, 113, 122, 1);
+            }
+        """)
+        self.COUNTRY_LAYOUT.addWidget(self.COORDS_QLineEdit)
+
+        self.SAVE_MAP_BUTTON = widget.QPushButton("Зберегти", self.COUNTRY_FRAME)
+        self.SAVE_MAP_BUTTON.setStyleSheet("""
+            QPushButton {
+                background-color: rgba(0, 0, 0, 0.2); 
+                border-radius: 4px;
+                border: none;
+                padding: 6px 12px;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 255, 255, 0.1);
+            }
+        """)
+        self.SAVE_MAP_BUTTON.setFixedSize(core.QSize(105, 38))
+        self.COUNTRY_LAYOUT.addWidget(self.SAVE_MAP_BUTTON, alignment=core.Qt.AlignmentFlag.AlignLeft)
+        
+        self.ADDED_CITIES_LABEL = widget.QLabel("Додані міста")
+        self.ADDED_CITIES_LABEL.setStyleSheet("color:white; font-weight:400;font-size:18px;text-align: left;")
+        self.CITY_SEARCH_LAYOUT.addWidget(self.ADDED_CITIES_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
+
+
+        self.ADDED_CITIES_FRAME = widget.QFrame()
+        self.ADDED_CITIES_FRAME.setStyleSheet("background-color: rgba(0, 0, 0, 0.2)")
+        self.ADDED_CITIES_FRAME.setFixedSize(core.QSize(544,160))
+        self.CITY_SEARCH_LAYOUT.addWidget(self.ADDED_CITIES_FRAME, alignment=core.Qt.AlignmentFlag.AlignLeft)
+        self.ADDED_CITIES_LAYOUT = widget.QVBoxLayout(self.ADDED_CITIES_FRAME)
+        self.ADDED_CITIES_LAYOUT.setContentsMargins(16,16,16,16)
+        self.ADDED_CITIES_LAYOUT.setSpacing(0)
+        
+        cities_list = ["Kyiv", "Bratislava", "Dnipro", "Rome"]
+        
+        for city in cities_list:
+            frame = widget.QFrame()
+            frame.setStyleSheet("background-color: none;")
+            frame.setFixedSize(core.QSize(512,32))
+            self.ADDED_CITIES_LAYOUT.addWidget(frame)
+            
+            layout = widget.QHBoxLayout(frame)
+
+            label = widget.QLabel(city)
+            trash_icon = QSvgWidget("media/search_bar/trash.svg")
+            layout.addWidget(label, alignment=core.Qt.AlignmentFlag.AlignLeft)
+            layout.addWidget(trash_icon, alignment=core.Qt.AlignmentFlag.AlignRight)
+            
         self.CITY_SEARCH_FRAME.hide()
 
         self.RESOLUTION_FRAME = widget.QFrame(self.RIGHT_FRAME)
         self.RESOLUTION_LAYOUT = widget.QVBoxLayout(self.RESOLUTION_FRAME)
-        self.RESOLUTION_LABEL = widget.QLabel("Розмір додатку", self.RESOLUTION_FRAME)
+        self.RESOLUTION_LAYOUT.setContentsMargins(0,0,0,0)
+        self.RESOLUTION_LABEL = widget.QLabel("Оберіть розмір додатку", self.RESOLUTION_FRAME)
         self.RESOLUTION_LABEL.setStyleSheet("background-color: none; color: white; font-size: 18px; font-weight: 400;")
         self.RESOLUTION_LAYOUT.addWidget(self.RESOLUTION_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
+
+        self.FRAME_CENTRAL = widget.QFrame()
+        self.FRAME_CENTRAL.setFixedSize(core.QSize(544, 174))
+        self.RESOLUTION_LAYOUT.addWidget(self.FRAME_CENTRAL)
+        self.FRAME_CENTRAL_LAYOUT = widget.QVBoxLayout(self.FRAME_CENTRAL)
+        self.FRAME_CENTRAL_LAYOUT.setContentsMargins(0,0,0,0)
+        self.FRAME_CENTRAL_LAYOUT.setSpacing(24)
+
+        
+        self.RADIO_BUTTONS_FRAME = widget.QFrame(self.FRAME_CENTRAL)
+        self.RADIO_BUTTONS_FRAME.setFixedSize(core.QSize(544, 122))
+        self.FRAME_CENTRAL_LAYOUT.addWidget(self.RADIO_BUTTONS_FRAME)
+
+        self.FRAME_RADIOBUTTONS_LAYOUT = widget.QVBoxLayout(self.RADIO_BUTTONS_FRAME)
+        self.FRAME_RADIOBUTTONS_LAYOUT.setContentsMargins(0,0,0,0)
+        self.FRAME_RADIOBUTTONS_LAYOUT.setSpacing(8)
+        
+        self.RADIO_1 = widget.QRadioButton("1280x800", self.RADIO_BUTTONS_FRAME)
+        self.RADIO_2 = widget.QRadioButton("1440x1024", self.RADIO_BUTTONS_FRAME)
+        self.RADIO_3 = widget.QRadioButton("1512x982", self.RADIO_BUTTONS_FRAME)
+        self.RADIO_4 = widget.QRadioButton("1728x1117", self.RADIO_BUTTONS_FRAME)
+
+        radio_buttons = [self.RADIO_1, self.RADIO_2, self.RADIO_3, self.RADIO_4]
+
+        self.RAIDO_BUTTONS_GROUP = widget.QButtonGroup(self.RADIO_BUTTONS_FRAME)
+        for rb in radio_buttons:
+            self.FRAME_RADIOBUTTONS_LAYOUT.addWidget(rb, alignment=core.Qt.AlignmentFlag.AlignLeft)
+            self.RAIDO_BUTTONS_GROUP.addButton(rb)        
+        
+        self.SAVE_SIZE_BUTTON = widget.QPushButton("Зберегти", self.FRAME_CENTRAL)
+        self.SAVE_SIZE_BUTTON.setStyleSheet("""
+            QPushButton {
+                background-color: rgba(0, 0, 0, 0.2); 
+                border-radius: 4px;
+                border: none;
+                padding: 6px 12px;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 255, 255, 0.1);
+            }
+        """)
+        self.SAVE_SIZE_BUTTON.setFixedSize(core.QSize(105, 38))
+        self.FRAME_CENTRAL_LAYOUT.addWidget(self.SAVE_SIZE_BUTTON, alignment=core.Qt.AlignmentFlag.AlignLeft)
+        
         self.RESOLUTION_FRAME.hide()
 
         self.LANGUAGE_FRAME = widget.QFrame(self.RIGHT_FRAME)
         self.LANGUAGE_LAYOUT = widget.QVBoxLayout(self.LANGUAGE_FRAME)
-        self.LANGUAGE_LABEL = widget.QLabel("Мова додатку", self.LANGUAGE_FRAME)
+        self.LANGUAGE_LAYOUT.setContentsMargins(0,0,0,0)
+        self.LANGUAGE_LAYOUT.setSpacing(24)
+        self.LANGUAGE_LABEL = widget.QLabel("Оберіть мову додатку", self.LANGUAGE_FRAME)
         self.LANGUAGE_LABEL.setStyleSheet("background-color: none; color: white; font-size: 18px; font-weight: 400;")
         self.LANGUAGE_LAYOUT.addWidget(self.LANGUAGE_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
+        
+        self.COMBOBOX_FRAME = widget.QFrame(self.LANGUAGE_FRAME)
+        self.COMBOBOX_FRAME.setFixedSize(core.QSize(544,54))
+        self.LANGUAGE_CENTRAL_LAYOUT = widget.QVBoxLayout(self.COMBOBOX_FRAME)
+        self.LANGUAGE_CENTRAL_LAYOUT.setContentsMargins(0,0,0,0)
+        self.LANGUAGE_CENTRAL_LAYOUT.setSpacing(0)
+        
+        self.LANGUAGE_LABEL = widget.QLabel("Mовa додатку", self.COMBOBOX_FRAME)
+        self.LANGUAGE_LABEL.setStyleSheet("background-color: none; color: white; font-size: 14px; font-weight: 500;")
+
+        self.LANGUAGE_CENTRAL_LAYOUT.addWidget(self.LANGUAGE_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
+
+        self.COMBOBOX_LANGUAGE = ComboBox(layout=self.LANGUAGE_CENTRAL_LAYOUT, items=["Українська", "English"])
+        
+        self.BUTTON_FRAME = widget.QFrame(self.LANGUAGE_FRAME)
+        self.BUTTON_FRAME.setFixedSize(core.QSize(544,38))
+        
+        self.BUTTON_LAYOUT = widget.QHBoxLayout(self.BUTTON_FRAME)
+        self.BUTTON_LAYOUT.setContentsMargins(0,0,0,0)
+        self.BUTTON_LAYOUT.setSpacing(0)
+        
+        self.SAVE_LANGUAGE_BUTTON = widget.QPushButton("Зберегти", self.BUTTON_FRAME)
+        self.SAVE_LANGUAGE_BUTTON.setStyleSheet("""
+            QPushButton {
+                background-color: rgba(0, 0, 0, 0.2); 
+                border-radius: 4px;
+                border: none;
+                padding: 6px 12px;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 255, 255, 0.1);
+            }
+        """)
+        self.SAVE_LANGUAGE_BUTTON.setFixedSize(core.QSize(105, 38))
+        self.BUTTON_LAYOUT.addWidget(self.SAVE_LANGUAGE_BUTTON, alignment=core.Qt.AlignmentFlag.AlignLeft)
+        
+        self.LANGUAGE_LAYOUT.addWidget(self.COMBOBOX_FRAME)
+        self.LANGUAGE_LAYOUT.addWidget(self.BUTTON_FRAME)
+        
         self.LANGUAGE_FRAME.hide()
 
         self.IMG_LIST_FRAME = widget.QFrame(self.RIGHT_FRAME)
         self.IMG_LIST_LAYOUT = widget.QVBoxLayout(self.IMG_LIST_FRAME)
+        self.IMG_LIST_LAYOUT.setContentsMargins(0,0,0,0)
         self.IMG_LIST_LABEL = widget.QLabel("Список зображень", self.IMG_LIST_FRAME)
         self.IMG_LIST_LABEL.setStyleSheet("background-color: none; color: white; font-size: 18px; font-weight: 400;")
         self.IMG_LIST_LAYOUT.addWidget(self.IMG_LIST_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
+        
+        
+        
         self.IMG_LIST_FRAME.hide()
 
         self.SETTINGS.clicked.connect(self.show_settings)
