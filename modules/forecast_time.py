@@ -9,7 +9,8 @@ class ForeCastTime(widget.QFrame):
         super().__init__(*args, **kwargs)
         self.WIDTH = 788
         self.HEIGHT = 157
-        self.setFixedSize(core.QSize(self.WIDTH, self.HEIGHT))
+        self.setFixedHeight(self.HEIGHT)
+        self.setMinimumWidth(self.WIDTH)
         
         
         self.ALL_FORECAST_DATA = [] 

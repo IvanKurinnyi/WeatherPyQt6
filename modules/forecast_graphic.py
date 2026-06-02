@@ -11,7 +11,8 @@ class ForeCastGraph(widget.QFrame):
         super().__init__(*args, **kwargs)
         self.WIDTH = 788
         self.HEIGHT = 197
-        self.setFixedSize(core.QSize(self.WIDTH, self.HEIGHT))
+        self.setFixedHeight(self.HEIGHT)
+        self.setMinimumWidth(self.WIDTH)
         
         self.LAYOUT = widget.QVBoxLayout(self)
         self.LAYOUT.setContentsMargins(16, 16, 16, 16)
@@ -42,7 +43,8 @@ class ForeCastGraph(widget.QFrame):
         self.LAYOUT.addWidget(self.DOWN_FRAME)
 
         self.ICON_FORECAST = widget.QFrame()
-        self.ICON_FORECAST.setFixedSize(core.QSize(728, 24))
+        self.ICON_FORECAST.setFixedHeight(24)
+        self.ICON_FORECAST.setMinimumWidth(728)
         self.ICON_LAYOUT = widget.QHBoxLayout(self.ICON_FORECAST)
         self.ICON_LAYOUT.setContentsMargins(0, 0, 0, 0)
         self.ICON_LAYOUT.setSpacing(0)
@@ -56,14 +58,16 @@ class ForeCastGraph(widget.QFrame):
         self.DOWN_LAYOUT.addWidget(self.GRAPHIC)
 
         self.GRAPHIC_FRAME = widget.QFrame()
-        self.GRAPHIC_FRAME.setFixedSize(core.QSize(726, 95))
+        self.GRAPHIC_FRAME.setFixedHeight(95)
+        self.GRAPHIC_FRAME.setMinimumWidth(726)
         self.COLUMN_LAYOUT = widget.QHBoxLayout(self.GRAPHIC_FRAME)
         self.COLUMN_LAYOUT.setContentsMargins(0, 0, 0, 0)
         self.COLUMN_LAYOUT.setSpacing(0)
         self.GRAPHIC_LAYOUT.addWidget(self.GRAPHIC_FRAME)
         
         self.NUMBERS_FRAME = widget.QFrame()
-        self.NUMBERS_FRAME.setFixedSize(core.QSize(22, 95))
+        self.NUMBERS_FRAME.setFixedHeight(95)
+        self.NUMBERS_FRAME.setMinimumWidth(22)
         self.TEMP_LAYOUT = widget.QVBoxLayout(self.NUMBERS_FRAME)
         self.TEMP_LAYOUT.setContentsMargins(0, 0, 0, 0)
         self.TEMP_LAYOUT.setSpacing(1)
@@ -98,6 +102,9 @@ class ForeCastGraph(widget.QFrame):
         self.clear_layout(self.ICON_LAYOUT)
         self.clear_layout(self.COLUMN_LAYOUT)
 
+        available_width = self.GRAPHIC_FRAME.width()
+        if available_width <= 1: 
+            available_width = 726
 
         interpolated_data = []
         for i in range(len(raw_data) - 1):
@@ -116,7 +123,7 @@ class ForeCastGraph(widget.QFrame):
         temp_range = 30
         max_height = 95
         total_points = len(interpolated_data)
-        block_width = int(726 / total_points)
+        block_width = int(available_width / total_points)
         bar_width = max(2, int(block_width * 0.75))
 
         for item in interpolated_data:

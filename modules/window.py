@@ -29,8 +29,10 @@ class MainWindow(widget.QMainWindow):
 
         self.roboto_font = gui.QFont(font_family, 16, 900)
 
-        self.WIDTH = 1200
-        self.HEIGHT = 830
+        json_res = read_json(name_file="settings.json")
+
+        self.WIDTH = int(json_res["currentResolution"][0])
+        self.HEIGHT = int(json_res["currentResolution"][1])
         self.X = (app.primaryScreen().size().width() - self.WIDTH) // 2
         self.Y = (app.primaryScreen().size().height() - self.HEIGHT) // 2
         self.setGeometry(self.X, self.Y, self.WIDTH, self.HEIGHT)
@@ -78,7 +80,7 @@ class MainWindow(widget.QMainWindow):
         self.RIGHT_FRAME = widget.QFrame(self.CENTRAL_FRAME)
         self.RIGHT_LAYOUT = widget.QVBoxLayout(self.RIGHT_FRAME)
         self.RIGHT_FRAME.setLayout(self.RIGHT_LAYOUT)
-        self.RIGHT_LAYOUT.setContentsMargins(0,0,0,0)
+        self.RIGHT_LAYOUT.setContentsMargins(20,30,20,0)
         self.RIGHT_LAYOUT.setSpacing(0)
 
         self.CENTRAL_LAYOUT.addWidget(self.LEFT_FRAME)
@@ -88,25 +90,27 @@ class MainWindow(widget.QMainWindow):
         self.TOGGLE_SWITCH = ToggleSwitch(self.LEFT_FRAME)
         self.LEFT_LAYOUT.addWidget(self.TOGGLE_SWITCH, alignment=core.Qt.AlignmentFlag.AlignRight)
 
-        self.SEARCH_BAR = SearchBar(parent = self.RIGHT_FRAME)
-        self.RIGHT_LAYOUT.addWidget(self.SEARCH_BAR, alignment=core.Qt.AlignmentFlag.AlignCenter)
+        self.RIGHT_CARDS_FRAME = widget.QFrame(self.RIGHT_FRAME)
+        # self.RIGHT_CARDS_FRAME.setMinimumSize(core.QSize(788, 733)) 
+        self.RIGHT_LAYOUT.addWidget(self.RIGHT_CARDS_FRAME, stretch=1)
+        
+        self.RIGHT_CARDS_LAYOUT = widget.QVBoxLayout(self.RIGHT_CARDS_FRAME)
+        self.RIGHT_CARDS_FRAME.setLayout(self.RIGHT_CARDS_LAYOUT)
+        self.RIGHT_CARDS_LAYOUT.setContentsMargins(0,20,0,37)
+        self.RIGHT_CARDS_LAYOUT.setSpacing(10)
+
+        self.SEARCH_BAR = SearchBar(parent = self.RIGHT_CARDS_FRAME)
+        self.RIGHT_CARDS_LAYOUT.addWidget(self.SEARCH_BAR)
+        self.RIGHT_CARDS_LAYOUT.addSpacing(10)
 
         self.SEARCH_BAR.city_selected.connect(self.show_city_weather)
         self.SEARCH_BAR.city_added.connect(self.on_city_added)
-
-        self.RIGHT_CARDS_FRAME = widget.QFrame(self.RIGHT_FRAME)
-        self.RIGHT_CARDS_FRAME.setFixedSize(core.QSize(788, 724)) 
-        self.RIGHT_LAYOUT.addWidget(self.RIGHT_CARDS_FRAME, alignment=core.Qt.AlignmentFlag.AlignCenter)
-
-
-        self.RIGHT_CARDS_LAYOUT = widget.QVBoxLayout(self.RIGHT_CARDS_FRAME)
-        self.RIGHT_CARDS_FRAME.setLayout(self.RIGHT_CARDS_LAYOUT)
-        self.RIGHT_CARDS_LAYOUT.setContentsMargins(0,0,0,47)
-        self.RIGHT_CARDS_LAYOUT.setSpacing(10)
-
-
+        self.SEARCH_BAR.resolution_changed.connect(self.update_window_resolution)
+        
+        
+        
         self.RIGHT_INFO_FRAME = widget.QFrame(self.RIGHT_CARDS_FRAME)
-        self.RIGHT_INFO_FRAME.setFixedSize(core.QSize(788, 303))
+        # self.RIGHT_INFO_FRAME.setMinimumSize(core.QSize(788, 303))
         self.RIGHT_CARDS_LAYOUT.addWidget(self.RIGHT_INFO_FRAME)
 
 
@@ -116,11 +120,11 @@ class MainWindow(widget.QMainWindow):
         
         self.RIGHT_CITY_CARD = RightCityCard(self.RIGHT_CARDS_FRAME)
         self.RIGHT_CITY_CARD.setFont(self.roboto_font)
-        self.RIGHT_INFO_LAYOUT.addWidget(self.RIGHT_CITY_CARD)
+        self.RIGHT_INFO_LAYOUT.addWidget(self.RIGHT_CITY_CARD, stretch=1)
         
         self.CITY_TIME_CARD = RightTimeCard(self.RIGHT_CARDS_FRAME)
         self.CITY_TIME_CARD.setFont(self.roboto_font)
-        self.RIGHT_INFO_LAYOUT.addWidget(self.CITY_TIME_CARD)
+        self.RIGHT_INFO_LAYOUT.addWidget(self.CITY_TIME_CARD, stretch=1)
 
         
         self.FORECAST_TIME = ForeCastTime(city_name = "Paris")
@@ -128,7 +132,7 @@ class MainWindow(widget.QMainWindow):
 
 
         self.FORECAST_GRAPH = ForeCastGraph(city_name=None)
-        self.RIGHT_CARDS_LAYOUT.addWidget(self.FORECAST_GRAPH)
+        self.RIGHT_CARDS_LAYOUT.addWidget(self.FORECAST_GRAPH, stretch=1)
 
 
 
@@ -212,6 +216,21 @@ class MainWindow(widget.QMainWindow):
         
         # Select the new card and show its weather
         self.show_city_weather(city_name)
+
+    def update_window_resolution(self, width, height):
+        
+        self.WIDTH = width
+        self.HEIGHT = height
+        
+     
+        self.X = (app.primaryScreen().size().width() - self.WIDTH) // 2
+        self.Y = (app.primaryScreen().size().height() - self.HEIGHT) // 2
+        
+        
+        self.setGeometry(self.X, self.Y, self.WIDTH, self.HEIGHT)
+        
+        
+        self.TITLE_BAR.setGeometry(0, 0, self.WIDTH, 20)
 
     def city_request(self):
         try:

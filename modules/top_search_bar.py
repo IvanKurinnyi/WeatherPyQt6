@@ -1,14 +1,18 @@
 import PyQt6.QtWidgets as widget
+import PyQt6.QtWebEngineWidgets as web_engine
 import PyQt6.QtCore as core
 import PyQt6.QtGui as gui
 from PyQt6.QtSvgWidgets import QSvgWidget
+import folium, io
 from .find_town import find_cities_by_prefix
 from .read_write_json import create_json, read_json
 from .combobox import ComboBox
-
+from .api_request import get_coordinates
+import requests
 class SearchBar(widget.QFrame):
     city_selected = core.pyqtSignal(str)
     city_added = core.pyqtSignal(str)
+    resolution_changed = core.pyqtSignal(int, int)  # ширина, висота
     
     def __init__(self,*args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -17,7 +21,8 @@ class SearchBar(widget.QFrame):
         self.CITY_NAMES = [city_obj.get('city', '').lower() for city_obj in self.CITIES_DATA]
         self.DYNAMIC_LABELS = []
 
-        self.setFixedSize(core.QSize(788, 36))
+        self.setFixedHeight(36)
+        self.setMinimumWidth(788)
         self.setStyleSheet("background-color:none")
         
         self.LAYOUT = widget.QHBoxLayout(self)
@@ -269,44 +274,83 @@ class SearchBar(widget.QFrame):
         self.CITY_SEARCH_LABEL.setStyleSheet("background-color: none; color: white; font-size: 18px; font-weight: 400;")
         self.CITY_SEARCH_LAYOUT.addWidget(self.CITY_SEARCH_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
         
+
+
         self.MAP_FRAME = widget.QFrame()
-        self.MAP_FRAME.setFixedSize(core.QSize(544,256))
-        # self.MAP_FRAME.setStyleSheet("background-color:purple")
+        self.MAP_FRAME.setFixedSize(core.QSize(544, 256))
         self.CITY_SEARCH_LAYOUT.addWidget(self.MAP_FRAME)
+
         self.MAP_LAYOUT = widget.QHBoxLayout(self.MAP_FRAME)
-        self.MAP_LAYOUT.setContentsMargins(0,0,0,0)
+        self.MAP_LAYOUT.setContentsMargins(0, 0, 0, 0)
         self.MAP_LAYOUT.setSpacing(16)
+
         self.COUNTRY_FRAME = widget.QLabel()
-        self.COUNTRY_FRAME.setFixedSize(core.QSize(239,256))
-        self.MAP = widget.QFrame()
-        self.MAP.setFixedSize(core.QSize(289,256))
-        self.MAP.setStyleSheet("background-color:green")
+        self.COUNTRY_FRAME.setFixedSize(core.QSize(239, 256))
         self.MAP_LAYOUT.addWidget(self.COUNTRY_FRAME)
-        self.MAP_LAYOUT.addWidget(self.MAP)
-        
+
+        self.WEB_VIEW = web_engine.QWebEngineView()
+        self.WEB_VIEW.setFixedSize(core.QSize(289, 256))
+        self.MAP_LAYOUT.addWidget(self.WEB_VIEW)
+
+        self.WEBMAP = folium.Map(location=(50, 30))
+        data = io.BytesIO()
+        self.WEBMAP.save(data, close_file=False)
+
+        self.WEB_VIEW.setHtml(data.getvalue().decode())
+
+
+
         self.COUNTRY_LAYOUT = widget.QVBoxLayout(self.COUNTRY_FRAME)
-        self.COUNTRY_LAYOUT.setContentsMargins(0,0,0,0)
+        self.COUNTRY_LAYOUT.setContentsMargins(0, 0, 0, 0)
         self.COUNTRY_LAYOUT.setSpacing(8)
-        
+
+        self.COUNTRY_GROUP_FRAME = widget.QFrame()
+        self.COUNTRY_GROUP_LAYOUT = widget.QVBoxLayout(self.COUNTRY_GROUP_FRAME)
+        self.COUNTRY_GROUP_LAYOUT.setContentsMargins(0, 0, 0, 0)
+        self.COUNTRY_GROUP_LAYOUT.setSpacing(4)
+        self.COUNTRY_LAYOUT.addWidget(self.COUNTRY_GROUP_FRAME)
+
+        countrys_json = read_json("countries.json")
+        countries = [item["name"] for item in countrys_json["data"]]
+
         self.COUNTRY_LABEL = widget.QLabel("Країна")
         self.COUNTRY_LABEL.setStyleSheet("color:white; font-weight:500;font-size:14px;text-align: left;")
-        self.COUNTRY_LABEL.setFixedSize(core.QSize(249,14))
-        self.COUNTRY_LAYOUT.addWidget(self.COUNTRY_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
-        self.COUNTRY_COMBOBOX = ComboBox(layout=self.COUNTRY_LAYOUT, items=["Виберіть країну", "Ukraine", "USA", "England"])
-        
+        self.COUNTRY_LABEL.setFixedSize(core.QSize(249, 14))
+        self.COUNTRY_GROUP_LAYOUT.addWidget(self.COUNTRY_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
+        self.COUNTRY_COMBOBOX = ComboBox(layout=self.COUNTRY_GROUP_LAYOUT, items=countries)
+
+        self.CITY_GROUP_FRAME = widget.QFrame()
+        self.CITY_GROUP_LAYOUT = widget.QVBoxLayout(self.CITY_GROUP_FRAME)
+        self.CITY_GROUP_LAYOUT.setContentsMargins(0, 0, 0, 0)
+        self.CITY_GROUP_LAYOUT.setSpacing(4)
+        self.COUNTRY_LAYOUT.addWidget(self.CITY_GROUP_FRAME)
+
+
         self.CITY_LABEL = widget.QLabel("Місто")
         self.CITY_LABEL.setStyleSheet("color:white; font-weight:500;font-size:14px;text-align: left;")
-        self.CITY_LABEL.setFixedSize(core.QSize(249,14))
-        self.COUNTRY_LAYOUT.addWidget(self.CITY_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
-        self.CITY_COMBOBOX = ComboBox(layout=self.COUNTRY_LAYOUT, items=["Виберіть місто", "Dnipro", "Kharkiv", "Kyiv"])
-        
+        self.CITY_LABEL.setFixedSize(core.QSize(249, 14))
+        self.CITY_GROUP_LAYOUT.addWidget(self.CITY_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
+        self.CITY_COMBOBOX = ComboBox(layout=self.CITY_GROUP_LAYOUT, items=["Виберіть місто", "Dnipro", "Kharkiv", "Kyiv"])
+
+        self.COUNTRY_COMBOBOX.currentTextChanged.connect(self.update_cities_by_country)
+
+        if self.COUNTRY_COMBOBOX.count() > 0:
+            self.update_cities_by_country(self.COUNTRY_COMBOBOX.currentText())
+
+        self.COORDS_GROUP_FRAME = widget.QFrame()
+        self.COORDS_GROUP_LAYOUT = widget.QVBoxLayout(self.COORDS_GROUP_FRAME)
+        self.COORDS_GROUP_LAYOUT.setContentsMargins(0, 0, 0, 0)
+        self.COORDS_GROUP_LAYOUT.setSpacing(4)
+        self.COUNTRY_LAYOUT.addWidget(self.COORDS_GROUP_FRAME)
+
         self.COORDS_LABEL = widget.QLabel("Координати")
         self.COORDS_LABEL.setStyleSheet("color:white; font-weight:500;font-size:14px;text-align: left;")
-        self.COORDS_LABEL.setFixedSize(core.QSize(249,14))
-        self.COUNTRY_LAYOUT.addWidget(self.COORDS_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
-        self.COORDS_QLineEdit = widget.QLineEdit()
-        self.COORDS_QLineEdit.setFixedSize(core.QSize(239,32))
-        self.COORDS_QLineEdit.setStyleSheet("""
+        self.COORDS_LABEL.setFixedSize(core.QSize(249, 14))
+        self.COORDS_GROUP_LAYOUT.addWidget(self.COORDS_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
+
+        self.COORDS_QLINEEDIT = widget.QLineEdit()
+        self.COORDS_QLINEEDIT.setFixedSize(core.QSize(239, 32))
+        self.COORDS_QLINEEDIT.setStyleSheet("""
             QLineEdit {
                 background-color: #ffffff;
                 border: none;
@@ -314,7 +358,10 @@ class SearchBar(widget.QFrame):
                 color: rgba(113, 113, 122, 1);
             }
         """)
-        self.COUNTRY_LAYOUT.addWidget(self.COORDS_QLineEdit)
+        self.COORDS_GROUP_LAYOUT.addWidget(self.COORDS_QLINEEDIT)
+        
+        
+        self.CITY_COMBOBOX.currentTextChanged.connect(self.update_coordinates_display)
 
         self.SAVE_MAP_BUTTON = widget.QPushButton("Зберегти", self.COUNTRY_FRAME)
         self.SAVE_MAP_BUTTON.setStyleSheet("""
@@ -383,8 +430,11 @@ class SearchBar(widget.QFrame):
         self.FRAME_RADIOBUTTONS_LAYOUT = widget.QVBoxLayout(self.RADIO_BUTTONS_FRAME)
         self.FRAME_RADIOBUTTONS_LAYOUT.setContentsMargins(0,0,0,0)
         self.FRAME_RADIOBUTTONS_LAYOUT.setSpacing(8)
+
+        resolution = read_json("settings.json")
         
-        self.RADIO_1 = widget.QRadioButton("1280x800", self.RADIO_BUTTONS_FRAME)
+
+        self.RADIO_1 = widget.QRadioButton("1200x800", self.RADIO_BUTTONS_FRAME)
         self.RADIO_2 = widget.QRadioButton("1440x1024", self.RADIO_BUTTONS_FRAME)
         self.RADIO_3 = widget.QRadioButton("1512x982", self.RADIO_BUTTONS_FRAME)
         self.RADIO_4 = widget.QRadioButton("1728x1117", self.RADIO_BUTTONS_FRAME)
@@ -394,7 +444,8 @@ class SearchBar(widget.QFrame):
         self.RAIDO_BUTTONS_GROUP = widget.QButtonGroup(self.RADIO_BUTTONS_FRAME)
         for rb in radio_buttons:
             self.FRAME_RADIOBUTTONS_LAYOUT.addWidget(rb, alignment=core.Qt.AlignmentFlag.AlignLeft)
-            self.RAIDO_BUTTONS_GROUP.addButton(rb)        
+            self.RAIDO_BUTTONS_GROUP.addButton(rb)
+        
         
         self.SAVE_SIZE_BUTTON = widget.QPushButton("Зберегти", self.FRAME_CENTRAL)
         self.SAVE_SIZE_BUTTON.setStyleSheet("""
@@ -409,6 +460,7 @@ class SearchBar(widget.QFrame):
             }
         """)
         self.SAVE_SIZE_BUTTON.setFixedSize(core.QSize(105, 38))
+        self.SAVE_SIZE_BUTTON.clicked.connect(self.save_resolution)
         self.FRAME_CENTRAL_LAYOUT.addWidget(self.SAVE_SIZE_BUTTON, alignment=core.Qt.AlignmentFlag.AlignLeft)
         
         self.RESOLUTION_FRAME.hide()
@@ -630,6 +682,12 @@ class SearchBar(widget.QFrame):
         self.RESOLUTION.setStyleSheet("background-color: rgba(0,0,0,0.2); border-radius: 0px; font-size:16px; font-weight:400; border:none; text-align: left; padding-left: 8px;")
         self.RESOLUTION_FRAME.show()
 
+    def on_resolution_changed(self, button):
+        resolution = read_json("settings.json")
+        current_res = button.text().split("x")
+        resolution["currentResolution"] = current_res  
+        create_json(resolution, "settings.json")
+
     def language_settings(self):
         self.clear()
         self.LANGUAGE.setStyleSheet("background-color: rgba(0,0,0,0.2); border-radius: 0px; font-size:16px; font-weight:400; border:none; text-align: left; padding-left: 8px;")
@@ -639,3 +697,69 @@ class SearchBar(widget.QFrame):
         self.clear()
         self.IMG_LIST.setStyleSheet("background-color: rgba(0,0,0,0.2); border-radius: 0px; font-size:16px; font-weight:400; border:none; text-align: left; padding-left: 8px;")
         self.IMG_LIST_FRAME.show()
+
+    def save_resolution(self):
+
+        checked_button = self.RAIDO_BUTTONS_GROUP.checkedButton()
+        if checked_button:
+
+            res_str = checked_button.text()
+            width, height = map(int, res_str.split("x"))
+            
+  
+            resolution = read_json("settings.json")
+            resolution["currentResolution"] = [str(width), str(height)]
+            create_json(resolution, "settings.json")
+            
+
+            self.resolution_changed.emit(width, height)
+            
+            self.close_settings()
+
+    def update_cities_by_country(self, country_name):      
+        if not country_name or country_name == "Виберіть країну":
+           
+            self.CITY_COMBOBOX.clear()
+            self.CITY_COMBOBOX.addItem("Виберіть місто")
+            return
+        
+    
+        cities_data = self.CITIES_DATA
+        
+       
+        cities_for_country = [
+            city_obj.get('city', '').title() 
+            for city_obj in cities_data 
+            if city_obj.get('country', '').lower() == country_name.lower()
+        ]
+        
+        
+        self.CITY_COMBOBOX.clear()
+        
+        if cities_for_country:
+            self.CITY_COMBOBOX.addItem("Виберіть місто")
+            self.CITY_COMBOBOX.addItems(cities_for_country)  
+        else:
+            self.CITY_COMBOBOX.addItem("Немає міст")
+    def update_coordinates_display(self, city_name):
+        if not city_name or city_name in ["Виберіть місто", "Немає міст"]:
+            self.COORDS_QLINEEDIT.clear()
+            return
+        
+        try:
+            
+            url = f"https://nominatim.openstreetmap.org/search?q={city_name}&format=json"
+            res = requests.get(url, headers={"User-Agent": "my-app"}, timeout=5)
+            
+            if res.status_code == 200 and res.json():
+                data = res.json()[0]  
+                lat = data.get("lat", "")
+                lon = data.get("lon", "")
+                
+               
+                self.COORDS_QLINEEDIT.setText(f"{lat}, {lon}")
+            else:
+                self.COORDS_QLINEEDIT.setText("Координати не знайдені")
+        except Exception as e:
+            print(f"Помилка при отриманні координат: {e}")
+            self.COORDS_QLINEEDIT.setText("Помилка при отриманні")
