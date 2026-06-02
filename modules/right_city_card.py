@@ -11,7 +11,7 @@ class RightCityCard(widget.QFrame):
         super().__init__(*args, **kwargs)
         self.WIDTH = 390
         self.HEIGHT = 303
-        self.setFixedSize(core.QSize(self.WIDTH, self.HEIGHT))
+        self.setMinimumSize(core.QSize(self.WIDTH, self.HEIGHT))
         self.setStyleSheet("""
             RightCityCard {
                 background-color: rgba(0, 0, 0, 0.2); 
