@@ -71,6 +71,7 @@ class MainWindow(widget.QMainWindow):
 
         self.LEFT_FRAME = widget.QFrame(self.CENTRAL_FRAME)
         self.LEFT_FRAME.setStyleSheet("background-color: rgba(0,0,0,0.4)")
+        self.LEFT_FRAME.setFixedWidth(370)
         self.LEFT_LAYOUT = widget.QVBoxLayout(self.LEFT_FRAME)
         self.LEFT_LAYOUT.setContentsMargins(20, 37, 20, 20)
         self.LEFT_LAYOUT.setSpacing(20)
@@ -144,6 +145,7 @@ class MainWindow(widget.QMainWindow):
         
         self.SCROLL_FRAME = widget.QFrame(parent=self.SCROLL_AREA)
         self.SCROLL_LAYOUT = widget.QVBoxLayout()
+        self.SCROLL_LAYOUT.setContentsMargins(0,0,0,0)
         self.SCROLL_LAYOUT.setSpacing(5)
         self.SCROLL_FRAME.setLayout(self.SCROLL_LAYOUT)
         self.SCROLL_AREA.setWidget(self.SCROLL_FRAME)
@@ -166,7 +168,7 @@ class MainWindow(widget.QMainWindow):
             card.setFont(self.roboto_font)
             self.cards.append(card)
             card.selected.connect(lambda c=card: self._on_card_selected(c))
-            self.SCROLL_LAYOUT.addWidget(card)
+            self.SCROLL_LAYOUT.addWidget(card, alignment=core.Qt.AlignmentFlag.AlignCenter)
             card.line(scroll_layout=self.SCROLL_LAYOUT)
             
         self.SCROLL_LAYOUT.addStretch(1)
@@ -203,18 +205,14 @@ class MainWindow(widget.QMainWindow):
         self.FORECAST_GRAPH.update_forecast(city_name)
 
     def on_city_added(self, city_name):
-        """Handle adding a new city to the left panel"""
-        # Create a new card for the city
         card = Card(parent=self.SCROLL_FRAME, city_name=city_name, scroll_frame=self.SCROLL_FRAME)
         card.setFont(self.roboto_font)
         self.cards.append(card)
         card.selected.connect(lambda c=card: self._on_card_selected(c))
         
-        # Insert before the stretch item
         self.SCROLL_LAYOUT.insertWidget(self.SCROLL_LAYOUT.count() - 1, card)
         card.line(scroll_layout=self.SCROLL_LAYOUT)
         
-        # Select the new card and show its weather
         self.show_city_weather(city_name)
 
     def update_window_resolution(self, width, height):

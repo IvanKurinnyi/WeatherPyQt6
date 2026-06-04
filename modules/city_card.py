@@ -85,7 +85,7 @@ class Card(widget.QFrame):
         
         self.UPPER_UPPER_LABEL.setStyleSheet("font-size:28px;font-family: 'Roboto';font-weight:500;color:white; margin-top: -5px")
         
-        self.UPPER_UPPER_LABEL.setText(city_name)
+        self.UPPER_UPPER_LABEL.setText(city_name.capitalize())
         
 
         self.UPPER_BOTTOM = widget.QFrame(self.UPPER_LEFT)

@@ -112,7 +112,7 @@ class RightCityCard(widget.QFrame):
         temp_min = str(city_request["main"]["temp_min"])
         description:str = city_request["weather"][0]["description"]
         icon_path = f"media/right_frame/weather_icons/{city_request["weather"][0]["icon"]}.svg"
-        self.CITY_LABEL.setText(city_name)
+        self.CITY_LABEL.setText(city_name.capitalize())
         self.DEGREE.setText(temp + "°")
         #self.WEATHER_ICON.load(icon_path)
         #self.WEATHER_ICON = widget.QLabel()
