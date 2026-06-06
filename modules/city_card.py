@@ -209,7 +209,9 @@ class Card(widget.QFrame):
             return "Dnipro"
 
 
-
+    def remove_line(self, city_list):
+        if len(city_list) < 2:
+            self.BOTTOM_LINE.setStyleSheet("background-color:none")
 
 
 

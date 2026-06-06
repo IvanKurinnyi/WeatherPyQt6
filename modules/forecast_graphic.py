@@ -1,18 +1,16 @@
 import PyQt6.QtWidgets as widget
 import PyQt6.QtCore as core
 import PyQt6.QtGui as gui
-from .api_request import forecast_request
 from .api_request import forecast_request, API_KEY
-
-
 
 class ForeCastGraph(widget.QFrame):
     def __init__(self, city_name, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.WIDTH = 788
+        
         self.HEIGHT = 197
         self.setFixedHeight(self.HEIGHT)
-        self.setMinimumWidth(self.WIDTH)
+        
+        self.setAttribute(core.Qt.WidgetAttribute.WA_Resized)
         
         self.LAYOUT = widget.QVBoxLayout(self)
         self.LAYOUT.setContentsMargins(16, 16, 16, 16)
@@ -44,12 +42,11 @@ class ForeCastGraph(widget.QFrame):
 
         self.ICON_FORECAST = widget.QFrame()
         self.ICON_FORECAST.setFixedHeight(24)
-        self.ICON_FORECAST.setMinimumWidth(728)
+        self.ICON_FORECAST.setSizePolicy(widget.QSizePolicy.Policy.Ignored, widget.QSizePolicy.Policy.Fixed)
         self.ICON_LAYOUT = widget.QHBoxLayout(self.ICON_FORECAST)
         self.ICON_LAYOUT.setContentsMargins(0, 0, 0, 0)
         self.ICON_LAYOUT.setSpacing(0)
-        self.DOWN_LAYOUT.addWidget(self.ICON_FORECAST, alignment=core.Qt.AlignmentFlag.AlignLeft)
-
+        self.DOWN_LAYOUT.addWidget(self.ICON_FORECAST)
 
         self.GRAPHIC = widget.QFrame()
         self.GRAPHIC_LAYOUT = widget.QHBoxLayout(self.GRAPHIC)
@@ -59,7 +56,7 @@ class ForeCastGraph(widget.QFrame):
 
         self.GRAPHIC_FRAME = widget.QFrame()
         self.GRAPHIC_FRAME.setFixedHeight(95)
-        self.GRAPHIC_FRAME.setMinimumWidth(726)
+        self.GRAPHIC_FRAME.setSizePolicy(widget.QSizePolicy.Policy.Ignored, widget.QSizePolicy.Policy.Fixed)
         self.COLUMN_LAYOUT = widget.QHBoxLayout(self.GRAPHIC_FRAME)
         self.COLUMN_LAYOUT.setContentsMargins(0, 0, 0, 0)
         self.COLUMN_LAYOUT.setSpacing(0)
@@ -80,7 +77,12 @@ class ForeCastGraph(widget.QFrame):
             label.setStyleSheet("font-size: 10px; color: rgba(255,255,255,0.6);")
             self.TEMP_LAYOUT.addWidget(label, alignment=core.Qt.AlignmentFlag.AlignCenter)
 
+        self.interpolated_data = []
         self.update_forecast(city_name)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        core.QTimer.singleShot(0, self.draw_graph)
 
     def clear_layout(self, layout):
         while layout.count():
@@ -99,42 +101,50 @@ class ForeCastGraph(widget.QFrame):
             print(f"Помилка оновлення графіка: {e}")
             return
 
-        self.clear_layout(self.ICON_LAYOUT)
-        self.clear_layout(self.COLUMN_LAYOUT)
-
-        available_width = self.GRAPHIC_FRAME.width()
-        if available_width <= 1: 
-            available_width = 726
-
-        interpolated_data = []
+        self.interpolated_data = []
         for i in range(len(raw_data) - 1):
             t1 = float(raw_data[i]["main"]["temp"])
             t2 = float(raw_data[i+1]["main"]["temp"])
             icon = raw_data[i]["weather"][0]["icon"]
-            interpolated_data.append({"temp": t1, "icon": icon, "is_main": True})
-            interpolated_data.append({"temp": t1 + (t2 - t1) * (1/3), "icon": None, "is_main": False})
-            interpolated_data.append({"temp": t1 + (t2 - t1) * (2/3), "icon": None, "is_main": False})
+            self.interpolated_data.append({"temp": t1, "icon": icon, "is_main": True})
+            self.interpolated_data.append({"temp": t1 + (t2 - t1) * (1/3), "icon": None, "is_main": False})
+            self.interpolated_data.append({"temp": t1 + (t2 - t1) * (2/3), "icon": None, "is_main": False})
 
         last_item = raw_data[-1]
-        interpolated_data.append({"temp": float(last_item["main"]["temp"]), "icon": last_item["weather"][0]["icon"], "is_main": True})
+        self.interpolated_data.append({"temp": float(last_item["main"]["temp"]), "icon": last_item["weather"][0]["icon"], "is_main": True})
 
-   
+        self.draw_graph()
+
+    def draw_graph(self):
+        self.clear_layout(self.ICON_LAYOUT)
+        self.clear_layout(self.COLUMN_LAYOUT)
+
+        available_width = self.GRAPHIC_FRAME.width()
+        if available_width <= 0:
+            return
+
         min_temp = -5
         temp_range = 30
         max_height = 95
-        total_points = len(interpolated_data)
+        total_points = len(self.interpolated_data)
+        
+        if total_points == 0:
+            return
+            
         block_width = int(available_width / total_points)
         bar_width = max(2, int(block_width * 0.75))
 
-        for item in interpolated_data:
-
+        for item in self.interpolated_data:
             icon_container = widget.QFrame()
             icon_container.setFixedSize(core.QSize(block_width, 24))
+            
             if item["is_main"] and item["icon"]:
                 icon_label = widget.QLabel(icon_container)
                 pix = gui.QPixmap(f"media/right_frame/weather_icons_white/{item['icon']}.svg")
-                icon_label.setPixmap(pix.scaled(16, 16, core.Qt.AspectRatioMode.KeepAspectRatio, core.Qt.TransformationMode.SmoothTransformation))
-                icon_label.setGeometry(int((block_width - 16) / 2), 2, 16, 16)
+                if not pix.isNull():
+                    icon_label.setPixmap(pix.scaled(16, 16, core.Qt.AspectRatioMode.KeepAspectRatio, core.Qt.TransformationMode.SmoothTransformation))
+                    icon_label.setGeometry(int((block_width - 16) / 2), 2, 16, 16)
+                    
             self.ICON_LAYOUT.addWidget(icon_container)
 
             col_container = widget.QFrame()
@@ -151,3 +161,5 @@ class ForeCastGraph(widget.QFrame):
             """)
             col_box.addWidget(column, alignment=core.Qt.AlignmentFlag.AlignBottom | core.Qt.AlignmentFlag.AlignHCenter)
             self.COLUMN_LAYOUT.addWidget(col_container)
+        
+        self.update()

@@ -97,7 +97,7 @@ class MainWindow(widget.QMainWindow):
         
         self.RIGHT_CARDS_LAYOUT = widget.QVBoxLayout(self.RIGHT_CARDS_FRAME)
         self.RIGHT_CARDS_FRAME.setLayout(self.RIGHT_CARDS_LAYOUT)
-        self.RIGHT_CARDS_LAYOUT.setContentsMargins(0,20,0,37)
+        self.RIGHT_CARDS_LAYOUT.setContentsMargins(0,1,0,37)
         self.RIGHT_CARDS_LAYOUT.setSpacing(10)
 
         self.SEARCH_BAR = SearchBar(parent = self.RIGHT_CARDS_FRAME)
@@ -106,6 +106,7 @@ class MainWindow(widget.QMainWindow):
 
         self.SEARCH_BAR.city_selected.connect(self.show_city_weather)
         self.SEARCH_BAR.city_added.connect(self.on_city_added)
+        self.SEARCH_BAR.city_removed.connect(self.city_remove)
         self.SEARCH_BAR.resolution_changed.connect(self.update_window_resolution)
         
         
@@ -170,18 +171,18 @@ class MainWindow(widget.QMainWindow):
             card.selected.connect(lambda c=card: self._on_card_selected(c))
             self.SCROLL_LAYOUT.addWidget(card, alignment=core.Qt.AlignmentFlag.AlignCenter)
             card.line(scroll_layout=self.SCROLL_LAYOUT)
-            
+            card.remove_line(city_list = city_list)
+
         self.SCROLL_LAYOUT.addStretch(1)
         
     
-    def show_city_weather(self, city_name):
+    def show_city_weather(self, city_name, coordinates="0,0"):
         self.current_preview_city = city_name 
 
         self.RIGHT_CITY_CARD.update_city_data(city_name)
         self.CITY_TIME_CARD.minute_update(city_name)
         self.FORECAST_TIME.update_city_time(city_name)
         self.FORECAST_GRAPH.update_forecast(city_name)
-
 
         for card in self.cards:
             if card.city_name.lower() == city_name.lower():
@@ -203,6 +204,14 @@ class MainWindow(widget.QMainWindow):
         self.CITY_TIME_CARD.minute_update(city_name)
         self.FORECAST_TIME.update_city_time(city_name)
         self.FORECAST_GRAPH.update_forecast(city_name)
+        
+        
+        try:
+            self.SEARCH_BAR.update_city_map(city_name)
+        except Exception as e:
+            print(f"{e}")
+            import traceback
+            traceback.print_exc()
 
     def on_city_added(self, city_name):
         card = Card(parent=self.SCROLL_FRAME, city_name=city_name, scroll_frame=self.SCROLL_FRAME)
@@ -213,7 +222,14 @@ class MainWindow(widget.QMainWindow):
         self.SCROLL_LAYOUT.insertWidget(self.SCROLL_LAYOUT.count() - 1, card)
         card.line(scroll_layout=self.SCROLL_LAYOUT)
         
-        self.show_city_weather(city_name)
+        
+        
+        try:
+            self.SEARCH_BAR.update_city_map(city_name)
+        except Exception as e:
+            print(f"{e}")
+        
+        self.show_city_weather(city_name, "0,0")
 
     def update_window_resolution(self, width, height):
         
@@ -237,6 +253,16 @@ class MainWindow(widget.QMainWindow):
             return data_dict.get("city", "Dnipro")
         except Exception:
             return "Dnipro"
+
+    def city_remove(self, city_name):
+        for card in self.cards:
+            if card.city_name.lower() == city_name.lower():
+                self.SCROLL_LAYOUT.removeWidget(card)
+                card.deleteLater()
+                self.cards.remove(card)
+                if self.selected_card == card:
+                    self.selected_card = None
+                return
 
 window = MainWindow()
         
