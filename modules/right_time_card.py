@@ -53,7 +53,7 @@ class RightTimeCard(widget.QFrame):
         self.DATE_FRAME = widget.QFrame()
         self.DATE_LAYOUT = widget.QHBoxLayout(self.DATE_FRAME)
         
-        self.WEEK_DAY = widget.QLabel(self.NOW.strftime("%A"), self.DATE_FRAME)
+        self.WEEK_DAY = widget.QLabel(self.NOW.strftime("%A").capitalize(), self.DATE_FRAME)
         self.WEEK_DAY.setAlignment(core.Qt.AlignmentFlag.AlignLeft)
         self.WEEK_DAY.setStyleSheet("font-size: 24px; font-weight: bold; font-family: 'Roboto'; color: white; background: none;")
         self.DATE_LAYOUT.addWidget(self.WEEK_DAY)
@@ -67,27 +67,31 @@ class RightTimeCard(widget.QFrame):
         
         
         self.WATCH_FRAME = widget.QWidget()
-        self.WATCH_LAYOUT = widget.QStackedLayout(self.WATCH_FRAME)
-    
-        self.WATCH_LAYOUT.setStackingMode(widget.QStackedLayout.StackingMode.StackAll)
-
-       
-        self.WATCH = QSvgWidget("media/right_frame/watch.svg")
-        self.WATCH.setFixedSize(168, 168)
-
         
+        self.WATCH_FRAME.setSizePolicy(widget.QSizePolicy.Policy.Expanding, widget.QSizePolicy.Policy.Expanding)
+        
+        self.WATCH_LAYOUT = widget.QGridLayout(self.WATCH_FRAME)
+        self.WATCH_LAYOUT.setContentsMargins(111, 0, 111, 0)
+
+        self.WATCH = QSvgWidget("media/right_frame/watch.svg")
+        self.WATCH.setSizePolicy(widget.QSizePolicy.Policy.Expanding, widget.QSizePolicy.Policy.Expanding)
+        self.WATCH.setMinimumSize(168, 168)
+        self.WATCH.renderer().setAspectRatioMode(core.Qt.AspectRatioMode.KeepAspectRatio)
+
         self.TIME = widget.QLabel("")
-        self.TIME.setStyleSheet("font-size:29px; color: white; font-weight: 500; font-family: 'Roboto';background: transparent;")
+        self.TIME.setStyleSheet("font-size:29px; color: white; font-weight: 500; font-family: 'Roboto'; background: transparent;")
         self.TIME.setAlignment(core.Qt.AlignmentFlag.AlignCenter)
 
-        self.WATCH_LAYOUT.addWidget(self.WATCH)
-        self.WATCH_LAYOUT.addWidget(self.TIME)
-        self.TIME.raise_()
+        self.WATCH_LAYOUT.addWidget(self.WATCH, 0, 0)
+        self.WATCH_LAYOUT.addWidget(self.TIME, 0, 0)
 
-        self.LAYOUT.addWidget(self.WATCH_FRAME, alignment=core.Qt.AlignmentFlag.AlignCenter)
-
-
-        self.LAYOUT.addStretch()
+        self.TIME.raise_() 
+        
+        self.LAYOUT.addStretch(1)
+        
+        self.LAYOUT.addWidget(self.WATCH_FRAME, 5) 
+        
+        self.LAYOUT.addStretch(1) 
  
     def minute_update(self, city_name):
         now = datetime.now()

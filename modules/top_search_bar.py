@@ -10,8 +10,9 @@ from .combobox import ComboBox
 from .api_request import get_coordinates
 import requests
 class SearchBar(widget.QFrame):
-    city_selected = core.pyqtSignal(str)
+    city_selected = core.pyqtSignal(str, str)  # city_name, coordinates
     city_added = core.pyqtSignal(str)
+    city_removed = core.pyqtSignal(str)  # city_name
     resolution_changed = core.pyqtSignal(int, int)  # ширина, висота
     
     def __init__(self,*args, **kwargs):
@@ -19,7 +20,7 @@ class SearchBar(widget.QFrame):
         
         self.CITIES_DATA = read_json("cities.json").get("data", [])
         self.CITY_NAMES = [city_obj.get('city', '').lower() for city_obj in self.CITIES_DATA]
-        self.DYNAMIC_LABELS = []
+        self.DYNAMIC_labelS = []
 
         self.setFixedHeight(36)
         self.setMinimumWidth(788)
@@ -51,9 +52,9 @@ class SearchBar(widget.QFrame):
         self.SETTINGS_ICON.setFixedSize(core.QSize(16,16))
         self.SETTINGS_LAYOUT.addWidget(self.SETTINGS_ICON)
         
-        self.SETTINGS_LABEL = widget.QLabel("Налаштування",self.SETTINGS_FRAME)
-        self.SETTINGS_LABEL.setStyleSheet("font-size:14px; font-weight:500;")
-        self.S_LAYOUT.addWidget(self.SETTINGS_LABEL)
+        self.SETTINGS_label = widget.QLabel("Налаштування",self.SETTINGS_FRAME)
+        self.SETTINGS_label.setStyleSheet("font-size:14px; font-weight:500;")
+        self.S_LAYOUT.addWidget(self.SETTINGS_label)
 
         self.LAYOUT.addStretch(1) 
 
@@ -208,9 +209,9 @@ class SearchBar(widget.QFrame):
         self.T_LAYOUT = widget.QHBoxLayout(self.TITLE_SETT)
         self.T_LAYOUT.setContentsMargins(0,0,0,0)
 
-        self.TITLE_LABEL = widget.QLabel("Налаштування")
-        self.TITLE_LABEL.setStyleSheet("font-size:24px; font-weight:500")
-        self.T_LAYOUT.addWidget(self.TITLE_LABEL)
+        self.TITLE_label = widget.QLabel("Налаштування")
+        self.TITLE_label.setStyleSheet("font-size:24px; font-weight:500")
+        self.T_LAYOUT.addWidget(self.TITLE_label)
         
         
         self.CLOSE_BUTTON = widget.QPushButton()
@@ -270,9 +271,9 @@ class SearchBar(widget.QFrame):
         self.CITY_SEARCH_FRAME = widget.QFrame(self.RIGHT_FRAME)
         self.CITY_SEARCH_LAYOUT = widget.QVBoxLayout(self.CITY_SEARCH_FRAME)
         self.CITY_SEARCH_LAYOUT.setContentsMargins(0,0,0,0)
-        self.CITY_SEARCH_LABEL = widget.QLabel("Пошук міста", self.CITY_SEARCH_FRAME)
-        self.CITY_SEARCH_LABEL.setStyleSheet("background-color: none; color: white; font-size: 18px; font-weight: 400;")
-        self.CITY_SEARCH_LAYOUT.addWidget(self.CITY_SEARCH_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
+        self.CITY_SEARCH_label = widget.QLabel("Пошук міста", self.CITY_SEARCH_FRAME)
+        self.CITY_SEARCH_label.setStyleSheet("background-color: none; color: white; font-size: 18px; font-weight: 400;")
+        self.CITY_SEARCH_LAYOUT.addWidget(self.CITY_SEARCH_label, alignment=core.Qt.AlignmentFlag.AlignLeft)
         
 
 
@@ -292,7 +293,7 @@ class SearchBar(widget.QFrame):
         self.WEB_VIEW.setFixedSize(core.QSize(289, 256))
         self.MAP_LAYOUT.addWidget(self.WEB_VIEW)
 
-        self.WEBMAP = folium.Map(location=(50, 30))
+        self.WEBMAP = folium.Map(location=(80, 60))
         data = io.BytesIO()
         self.WEBMAP.save(data, close_file=False)
 
@@ -362,6 +363,7 @@ class SearchBar(widget.QFrame):
         
         
         self.CITY_COMBOBOX.currentTextChanged.connect(self.update_coordinates_display)
+        self.CITY_COMBOBOX.currentTextChanged.connect(self.update_city_map)
 
         self.SAVE_MAP_BUTTON = widget.QPushButton("Зберегти", self.COUNTRY_FRAME)
         self.SAVE_MAP_BUTTON.setStyleSheet("""
@@ -376,6 +378,9 @@ class SearchBar(widget.QFrame):
             }
         """)
         self.SAVE_MAP_BUTTON.setFixedSize(core.QSize(105, 38))
+        self.SAVE_MAP_BUTTON.clicked.connect(self.save_selected_city)
+        self.SAVE_MAP_BUTTON.clicked.connect(lambda: self.update_added_cities(city_name=self.CITY_COMBOBOX.currentText()))
+        #self.SAVE_MAP_BUTTON.clicked.connect(lambda: self.city_selected.emit(self.CITY_COMBOBOX.currentText(), self.COORDS_QLINEEDIT.text()))
         self.COUNTRY_LAYOUT.addWidget(self.SAVE_MAP_BUTTON, alignment=core.Qt.AlignmentFlag.AlignLeft)
         
         self.ADDED_CITIES_LABEL = widget.QLabel("Додані міста")
@@ -391,29 +396,39 @@ class SearchBar(widget.QFrame):
         self.ADDED_CITIES_LAYOUT.setContentsMargins(16,16,16,16)
         self.ADDED_CITIES_LAYOUT.setSpacing(0)
         
-        cities_list = ["Kyiv", "Bratislava", "Dnipro", "Rome"]
+        cities = read_json("city.json")
         
-        for city in cities_list:
+        self.CITIES_LIST = cities
+        
+        self.added_city_frames = {}
+        
+        for city in self.CITIES_LIST:
             frame = widget.QFrame()
             frame.setStyleSheet("background-color: none;")
             frame.setFixedSize(core.QSize(512,32))
             self.ADDED_CITIES_LAYOUT.addWidget(frame)
-            
-            layout = widget.QHBoxLayout(frame)
 
+            row_layout = widget.QHBoxLayout(frame) 
             label = widget.QLabel(city)
-            trash_icon = QSvgWidget("media/search_bar/trash.svg")
-            layout.addWidget(label, alignment=core.Qt.AlignmentFlag.AlignLeft)
-            layout.addWidget(trash_icon, alignment=core.Qt.AlignmentFlag.AlignRight)
+
+            trash_btn = widget.QPushButton()
+            trash_btn.setFixedSize(core.QSize(16,16))
+            trash_btn.clicked.connect(lambda checked=False, c=city: self.delete_city(c))
+            QSvgWidget("media/search_bar/trash.svg", trash_btn)
+
+            row_layout.addWidget(label, alignment=core.Qt.AlignmentFlag.AlignLeft)
+            row_layout.addWidget(trash_btn, alignment=core.Qt.AlignmentFlag.AlignRight)
+
+            self.added_city_frames[city.lower()] = frame
             
         self.CITY_SEARCH_FRAME.hide()
 
         self.RESOLUTION_FRAME = widget.QFrame(self.RIGHT_FRAME)
         self.RESOLUTION_LAYOUT = widget.QVBoxLayout(self.RESOLUTION_FRAME)
         self.RESOLUTION_LAYOUT.setContentsMargins(0,0,0,0)
-        self.RESOLUTION_LABEL = widget.QLabel("Оберіть розмір додатку", self.RESOLUTION_FRAME)
-        self.RESOLUTION_LABEL.setStyleSheet("background-color: none; color: white; font-size: 18px; font-weight: 400;")
-        self.RESOLUTION_LAYOUT.addWidget(self.RESOLUTION_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
+        self.RESOLUTION_label = widget.QLabel("Оберіть розмір додатку", self.RESOLUTION_FRAME)
+        self.RESOLUTION_label.setStyleSheet("background-color: none; color: white; font-size: 18px; font-weight: 400;")
+        self.RESOLUTION_LAYOUT.addWidget(self.RESOLUTION_label, alignment=core.Qt.AlignmentFlag.AlignLeft)
 
         self.FRAME_CENTRAL = widget.QFrame()
         self.FRAME_CENTRAL.setFixedSize(core.QSize(544, 174))
@@ -559,7 +574,7 @@ class SearchBar(widget.QFrame):
             else:
                 self.ADD_BUTTON.hide()
             
-            # Show search results
+            
             found_cities = find_cities_by_prefix(self.CITIES_DATA, text, limit=5)
             
             if found_cities:
@@ -606,8 +621,17 @@ class SearchBar(widget.QFrame):
         self.CLEAR.show()
         self.ADD_BUTTON.show()
         
-        self.POPUP.hide()       
-        self.city_selected.emit(city_name)
+        self.POPUP.hide()
+        
+        self.update_city_map(city_name)
+        
+        try:
+            coordinates = get_coordinates(city_name)
+        except Exception as e:
+            print(f"Error getting coordinates for {city_name}: {e}")
+            coordinates = "0,0"
+        
+        self.city_selected.emit(city_name, coordinates)
             
     def eventFilter(self, obj, event):
         if event.type() == core.QEvent.Type.MouseButtonPress:
@@ -763,3 +787,120 @@ class SearchBar(widget.QFrame):
         except Exception as e:
             print(f"Помилка при отриманні координат: {e}")
             self.COORDS_QLINEEDIT.setText("Помилка при отриманні")
+
+    def save_selected_city(self):
+        
+        city_name = self.CITY_COMBOBOX.currentText().strip()
+        
+        
+        if not city_name or city_name in ["Виберіть місто", "Немає міст"]:
+            return
+        
+        try:
+            cities = read_json("city.json")
+        except:
+            cities = []
+        
+        
+        if not any(c.lower() == city_name.lower() for c in cities):
+            cities.append(city_name)
+            create_json(cities, "city.json")
+            
+            
+            
+            self.city_added.emit(city_name)
+
+    def update_city_map(self, city_name):
+
+        if not city_name or city_name in ["Виберіть місто", "Немає міст"]:
+            return
+
+        try:
+            url = f"https://nominatim.openstreetmap.org/search?q={city_name}&format=json"
+
+            response = requests.get(
+                url,
+                headers={"User-Agent": "my-app"},
+                timeout=5
+            )
+
+            data = response.json()
+
+            if not data:
+                print(f"[MAP] Місто {city_name} не знайдено")
+                return
+
+            lat = float(data[0]["lat"])
+            lon = float(data[0]["lon"])
+
+            
+
+            self.WEBMAP = folium.Map(
+                location=[lat, lon],
+                zoom_start=10,
+                tiles="OpenStreetMap"
+            )
+
+            folium.Marker(
+                [lat, lon],
+                popup=city_name,
+                tooltip=city_name
+            ).add_to(self.WEBMAP)
+
+            data_buffer = io.BytesIO()
+
+            self.WEBMAP.save(
+                data_buffer,
+                close_file=False
+            )
+
+            self.WEB_VIEW.setHtml(
+                data_buffer.getvalue().decode()
+            )
+
+            
+
+        except Exception as e:
+            print(f"[MAP ERROR] {e}")
+
+
+    def delete_city(self, city_name):
+        city_name = city_name.strip()
+        try:
+            cities = read_json("city.json")
+        except:
+            cities = []
+        cities = [c for c in cities if c.lower() != city_name.lower()]
+        create_json(cities, "city.json")
+
+        frame = self.added_city_frames.get(city_name.lower())
+        if frame:
+            self.ADDED_CITIES_LAYOUT.removeWidget(frame)
+            frame.setParent(None)
+            frame.deleteLater()
+            del self.added_city_frames[city_name.lower()]
+
+        self.CITIES_LIST = [c for c in self.CITIES_LIST if c.lower() != city_name.lower()]
+        self.city_removed.emit(city_name)
+
+    def update_added_cities(self, city_name):
+        if city_name.lower() in self.added_city_frames:
+            return
+
+        frame = widget.QFrame()
+        frame.setStyleSheet("background-color: none;")
+        frame.setFixedSize(core.QSize(512,32))
+        self.ADDED_CITIES_LAYOUT.addWidget(frame)
+
+        row_layout = widget.QHBoxLayout(frame) 
+        label = widget.QLabel(city_name)
+
+        trash_btn = widget.QPushButton()
+        trash_btn.setFixedSize(core.QSize(16,16))
+        trash_btn.clicked.connect(lambda checked=False, c=city_name: self.delete_city(c))
+        QSvgWidget("media/search_bar/trash.svg", trash_btn)
+
+        row_layout.addWidget(label, alignment=core.Qt.AlignmentFlag.AlignLeft)
+        row_layout.addWidget(trash_btn, alignment=core.Qt.AlignmentFlag.AlignRight)
+
+        self.added_city_frames[city_name.lower()] = frame
