@@ -3,10 +3,10 @@ def find_cities_by_prefix(cities: list, prefix: str, limit: int = 10) -> list:
     result = []
     
     for city_obj in cities:
-        if 'city' not in city_obj:
+        if 'name' not in city_obj:
             continue
             
-        city_name = city_obj['city']
+        city_name = city_obj['name']
         if city_name.lower().startswith(prefix_lower):
             result.append(city_name.capitalize())
             

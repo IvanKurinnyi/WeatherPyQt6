@@ -71,7 +71,7 @@ class RightTimeCard(widget.QFrame):
         self.WATCH_FRAME.setSizePolicy(widget.QSizePolicy.Policy.Expanding, widget.QSizePolicy.Policy.Expanding)
         
         self.WATCH_LAYOUT = widget.QGridLayout(self.WATCH_FRAME)
-        self.WATCH_LAYOUT.setContentsMargins(111, 0, 111, 0)
+        self.WATCH_LAYOUT.setContentsMargins(0, 0, 0, 0)
 
         self.WATCH = QSvgWidget("media/right_frame/watch.svg")
         self.WATCH.setSizePolicy(widget.QSizePolicy.Policy.Expanding, widget.QSizePolicy.Policy.Expanding)
@@ -82,8 +82,8 @@ class RightTimeCard(widget.QFrame):
         self.TIME.setStyleSheet("font-size:29px; color: white; font-weight: 500; font-family: 'Roboto'; background: transparent;")
         self.TIME.setAlignment(core.Qt.AlignmentFlag.AlignCenter)
 
-        self.WATCH_LAYOUT.addWidget(self.WATCH, 0, 0)
-        self.WATCH_LAYOUT.addWidget(self.TIME, 0, 0)
+        self.WATCH_LAYOUT.addWidget(self.WATCH, 0, 0, core.Qt.AlignmentFlag.AlignCenter)
+        self.WATCH_LAYOUT.addWidget(self.TIME, 0, 0, core.Qt.AlignmentFlag.AlignCenter)
 
         self.TIME.raise_() 
         

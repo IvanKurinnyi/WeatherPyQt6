@@ -76,6 +76,7 @@ class Card(widget.QFrame):
             self.ICON_LAYOUT.addWidget(self.POSITION_ICON, alignment=core.Qt.AlignmentFlag.AlignLeft)
             self.POSITION_PICTURE = gui.QPixmap("media/city_card/navigation.svg")
             
+            
         self.CITY_NAME_FRAME = widget.QFrame(self.UPPER_UPPER)
         self.UPPER_UPPER_LAYOUT.addWidget(self.CITY_NAME_FRAME)
 
@@ -154,8 +155,8 @@ class Card(widget.QFrame):
 
         self.update_style()
         
-    def line(self, scroll_layout):
-        scroll_layout.addWidget(self.BOTTOM_LINE, alignment = core.Qt.AlignmentFlag.AlignCenter)
+    #def line(self, scroll_layout):
+    #    scroll_layout.addWidget(self.BOTTOM_LINE, alignment = core.Qt.AlignmentFlag.AlignCenter)
 
     def update_style(self):
         if self.IS_CHOSEN:
@@ -209,8 +210,11 @@ class Card(widget.QFrame):
             return "Dnipro"
 
 
-    def remove_line(self, city_list):
-        if len(city_list) < 2:
+    def update_line_visibility(self, should_show):
+       
+        if should_show:
+            self.BOTTOM_LINE.setStyleSheet("background-color: rgba(255,255,255,0.2)")
+        else:
             self.BOTTOM_LINE.setStyleSheet("background-color:none")
 
 

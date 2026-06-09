@@ -18,9 +18,15 @@ class SearchBar(widget.QFrame):
     def __init__(self,*args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        self.CITIES_DATA = read_json("cities.json").get("data", [])
-        self.CITY_NAMES = [city_obj.get('city', '').lower() for city_obj in self.CITIES_DATA]
-        self.DYNAMIC_labelS = []
+        self.CITIES_DATA = read_json("cities.json")
+        #self.CITY_NAMES = [city_obj.get('city', '').lower() for city_obj in self.CITIES_DATA]
+        self.DYNAMIC_LABELS = []
+
+        def get_names(data):
+            return [item.get("name", "").lower() for item in data if item]
+
+        self.CITY_NAMES = get_names(self.CITIES_DATA)
+        
 
         self.setFixedHeight(36)
         self.setMinimumWidth(788)
@@ -681,7 +687,6 @@ class SearchBar(widget.QFrame):
     def close_settings(self):
         self.SETTINGS_POPUP.hide()
 
-
         
     def clear(self):
         self.CITY_SEARCH.setStyleSheet("background-color: none; border-radius: 0px; font-size:16px; font-weight:400; border:none; text-align: left; padding-left: 8px;")
@@ -693,8 +698,6 @@ class SearchBar(widget.QFrame):
         self.RESOLUTION_FRAME.hide()
         self.LANGUAGE_FRAME.hide()
         self.IMG_LIST_FRAME.hide()
-
-
 
     def city_search(self):
         self.clear()
@@ -880,6 +883,8 @@ class SearchBar(widget.QFrame):
             frame.deleteLater()
             del self.added_city_frames[city_name.lower()]
 
+        #line = line.revomeWidget(frame)
+
         self.CITIES_LIST = [c for c in self.CITIES_LIST if c.lower() != city_name.lower()]
         self.city_removed.emit(city_name)
 
@@ -904,3 +909,6 @@ class SearchBar(widget.QFrame):
         row_layout.addWidget(trash_btn, alignment=core.Qt.AlignmentFlag.AlignRight)
 
         self.added_city_frames[city_name.lower()] = frame
+
+
+    

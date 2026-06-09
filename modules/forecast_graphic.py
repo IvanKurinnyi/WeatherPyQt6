@@ -10,8 +10,6 @@ class ForeCastGraph(widget.QFrame):
         self.HEIGHT = 197
         self.setFixedHeight(self.HEIGHT)
         
-        self.setAttribute(core.Qt.WidgetAttribute.WA_Resized)
-        
         self.LAYOUT = widget.QVBoxLayout(self)
         self.LAYOUT.setContentsMargins(16, 16, 16, 16)
         self.LAYOUT.setSpacing(16)
@@ -40,14 +38,27 @@ class ForeCastGraph(widget.QFrame):
         self.DOWN_LAYOUT.setSpacing(0)
         self.LAYOUT.addWidget(self.DOWN_FRAME)
 
+        # --- Создаем структуру для Иконок (зеркальную структуре графика) ---
         self.ICON_FORECAST = widget.QFrame()
         self.ICON_FORECAST.setFixedHeight(24)
-        self.ICON_FORECAST.setSizePolicy(widget.QSizePolicy.Policy.Ignored, widget.QSizePolicy.Policy.Fixed)
         self.ICON_LAYOUT = widget.QHBoxLayout(self.ICON_FORECAST)
         self.ICON_LAYOUT.setContentsMargins(0, 0, 0, 0)
-        self.ICON_LAYOUT.setSpacing(0)
+        self.ICON_LAYOUT.setSpacing(6) # Такой же отступ, как у графика ниже
         self.DOWN_LAYOUT.addWidget(self.ICON_FORECAST)
 
+        # Контейнер, куда будут сыпаться сами иконки
+        self.ICON_BARS_FRAME = widget.QFrame()
+        self.ICON_BARS_LAYOUT = widget.QHBoxLayout(self.ICON_BARS_FRAME)
+        self.ICON_BARS_LAYOUT.setContentsMargins(0, 0, 0, 0)
+        self.ICON_BARS_LAYOUT.setSpacing(0)
+        self.ICON_LAYOUT.addWidget(self.ICON_BARS_FRAME)
+
+        # Невидимая заглушка справа, чтобы сдвинуть иконки влево от цифр градусов
+        self.ICON_SPACER = widget.QFrame()
+        self.ICON_SPACER.setFixedWidth(22) # Ровно по ширине NUMBERS_FRAME
+        self.ICON_LAYOUT.addWidget(self.ICON_SPACER)
+
+        # --- Структура для Столбиков Графика ---
         self.GRAPHIC = widget.QFrame()
         self.GRAPHIC_LAYOUT = widget.QHBoxLayout(self.GRAPHIC)
         self.GRAPHIC_LAYOUT.setContentsMargins(0, 0, 0, 0)
@@ -56,7 +67,6 @@ class ForeCastGraph(widget.QFrame):
 
         self.GRAPHIC_FRAME = widget.QFrame()
         self.GRAPHIC_FRAME.setFixedHeight(95)
-        self.GRAPHIC_FRAME.setSizePolicy(widget.QSizePolicy.Policy.Ignored, widget.QSizePolicy.Policy.Fixed)
         self.COLUMN_LAYOUT = widget.QHBoxLayout(self.GRAPHIC_FRAME)
         self.COLUMN_LAYOUT.setContentsMargins(0, 0, 0, 0)
         self.COLUMN_LAYOUT.setSpacing(0)
@@ -64,7 +74,7 @@ class ForeCastGraph(widget.QFrame):
         
         self.NUMBERS_FRAME = widget.QFrame()
         self.NUMBERS_FRAME.setFixedHeight(95)
-        self.NUMBERS_FRAME.setMinimumWidth(22)
+        self.NUMBERS_FRAME.setFixedWidth(22) # Зафиксировали ширину для точного выравнивания
         self.TEMP_LAYOUT = widget.QVBoxLayout(self.NUMBERS_FRAME)
         self.TEMP_LAYOUT.setContentsMargins(0, 0, 0, 0)
         self.TEMP_LAYOUT.setSpacing(1)
@@ -79,10 +89,6 @@ class ForeCastGraph(widget.QFrame):
 
         self.interpolated_data = []
         self.update_forecast(city_name)
-
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        core.QTimer.singleShot(0, self.draw_graph)
 
     def clear_layout(self, layout):
         while layout.count():
@@ -116,50 +122,55 @@ class ForeCastGraph(widget.QFrame):
         self.draw_graph()
 
     def draw_graph(self):
-        self.clear_layout(self.ICON_LAYOUT)
+        self.clear_layout(self.ICON_BARS_LAYOUT) # Очищаем только контейнер с иконками
         self.clear_layout(self.COLUMN_LAYOUT)
-
-        available_width = self.GRAPHIC_FRAME.width()
-        if available_width <= 0:
-            return
 
         min_temp = -5
         temp_range = 30
         max_height = 95
-        total_points = len(self.interpolated_data)
         
-        if total_points == 0:
+        if not self.interpolated_data:
             return
-            
-        block_width = int(available_width / total_points)
-        bar_width = max(2, int(block_width * 0.75))
 
         for item in self.interpolated_data:
+            # --- 1. Контейнер для Иконки ---
             icon_container = widget.QFrame()
-            icon_container.setFixedSize(core.QSize(block_width, 24))
+            icon_container.setFixedHeight(24)
+            icon_container.setSizePolicy(widget.QSizePolicy.Policy.Expanding, widget.QSizePolicy.Policy.Fixed)
+            
+            icon_box = widget.QHBoxLayout(icon_container)
+            icon_box.setContentsMargins(0, 0, 0, 0)
+            icon_box.setAlignment(core.Qt.AlignmentFlag.AlignCenter)
             
             if item["is_main"] and item["icon"]:
-                icon_label = widget.QLabel(icon_container)
+                icon_label = widget.QLabel()
                 pix = gui.QPixmap(f"media/right_frame/weather_icons_white/{item['icon']}.svg")
                 if not pix.isNull():
                     icon_label.setPixmap(pix.scaled(16, 16, core.Qt.AspectRatioMode.KeepAspectRatio, core.Qt.TransformationMode.SmoothTransformation))
-                    icon_label.setGeometry(int((block_width - 16) / 2), 2, 16, 16)
+                icon_box.addWidget(icon_label)
                     
-            self.ICON_LAYOUT.addWidget(icon_container)
+            self.ICON_BARS_LAYOUT.addWidget(icon_container, stretch=1)
 
+            # --- 2. Контейнер для Столбика ---
             col_container = widget.QFrame()
-            col_container.setFixedSize(core.QSize(block_width, max_height))
+            col_container.setFixedHeight(max_height)
+            col_container.setSizePolicy(widget.QSizePolicy.Policy.Expanding, widget.QSizePolicy.Policy.Fixed)
+            
             col_box = widget.QVBoxLayout(col_container)
-            col_box.setContentsMargins(0, 0, 0, 0)
+            col_box.setContentsMargins(0, 0, 0, 0) 
             
             column = widget.QFrame()
             calc_h = int(((item["temp"] - min_temp) / temp_range) * max_height)
-            column.setFixedSize(core.QSize(bar_width, max(1, calc_h)))
+            
+            column.setFixedHeight(max(1, calc_h))
+            column.setFixedWidth(10)
+            
             column.setStyleSheet("""
-                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #FDD835, stop:1 #4FC3F7);
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(255, 223, 86, 1), stop:1 rgba(135, 206, 250, 1));
                 border-radius: 2px;
             """)
+            
             col_box.addWidget(column, alignment=core.Qt.AlignmentFlag.AlignBottom | core.Qt.AlignmentFlag.AlignHCenter)
-            self.COLUMN_LAYOUT.addWidget(col_container)
+            self.COLUMN_LAYOUT.addWidget(col_container, stretch=1)
         
         self.update()
