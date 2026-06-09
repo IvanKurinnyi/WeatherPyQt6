@@ -7,7 +7,7 @@ import json
 #     with open(file=f"{name_file}", mode="w") as file:
 #         file.write(json.dumps(data, ensure_ascii=False, indent=4))
 
-API_KEY = os.getenv("API_KEY") 
+API_KEY = "d562486e64d8cd8b97cb68e1b245c4b4" #os.getenv("API_KEY") 
 
 def api_request(city:str, API_KEY:str):
     url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={API_KEY}&units=metric&lang=ua"

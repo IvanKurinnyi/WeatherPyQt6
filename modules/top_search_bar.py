@@ -880,6 +880,8 @@ class SearchBar(widget.QFrame):
             frame.deleteLater()
             del self.added_city_frames[city_name.lower()]
 
+        #line = line.revomeWidget(frame)
+
         self.CITIES_LIST = [c for c in self.CITIES_LIST if c.lower() != city_name.lower()]
         self.city_removed.emit(city_name)
 
