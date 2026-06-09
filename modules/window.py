@@ -169,9 +169,18 @@ class MainWindow(widget.QMainWindow):
             card.setFont(self.roboto_font)
             self.cards.append(card)
             card.selected.connect(lambda c=card: self._on_card_selected(c))
-            self.SCROLL_LAYOUT.addWidget(card, alignment=core.Qt.AlignmentFlag.AlignCenter)
-            card.line(scroll_layout=self.SCROLL_LAYOUT)
-            card.remove_line(city_list = city_list)
+            self.SCROLL_LAYOUT.addWidget(
+                card,
+                alignment=core.Qt.AlignmentFlag.AlignCenter
+                )
+
+            self.SCROLL_LAYOUT.addWidget(
+                card.BOTTOM_LINE,
+                alignment=core.Qt.AlignmentFlag.AlignCenter
+                )
+        
+        # Обновить видимость линий в зависимости от количества городов
+        self._update_all_lines_visibility()
 
         self.SCROLL_LAYOUT.addStretch(1)
         
@@ -219,10 +228,13 @@ class MainWindow(widget.QMainWindow):
         self.cards.append(card)
         card.selected.connect(lambda c=card: self._on_card_selected(c))
         
-        self.SCROLL_LAYOUT.insertWidget(self.SCROLL_LAYOUT.count() - 1, card)
-        card.line(scroll_layout=self.SCROLL_LAYOUT)
+        insert_index = self.SCROLL_LAYOUT.count() - 1
+
+        self.SCROLL_LAYOUT.insertWidget(insert_index, card)
+        self.SCROLL_LAYOUT.insertWidget(insert_index + 1, card.BOTTOM_LINE)
         
-        
+        # Обновить видимость линий для всех карточек
+        self._update_all_lines_visibility()
         
         try:
             self.SEARCH_BAR.update_city_map(city_name)
@@ -257,12 +269,25 @@ class MainWindow(widget.QMainWindow):
     def city_remove(self, city_name):
         for card in self.cards:
             if card.city_name.lower() == city_name.lower():
+
                 self.SCROLL_LAYOUT.removeWidget(card)
+                self.SCROLL_LAYOUT.removeWidget(card.BOTTOM_LINE)
+
+                card.BOTTOM_LINE.deleteLater()
                 card.deleteLater()
+
                 self.cards.remove(card)
+
                 if self.selected_card == card:
                     self.selected_card = None
+
+                self._update_all_lines_visibility()
                 return
+
+    def _update_all_lines_visibility(self):
+        is_multiple_cities = len(self.cards) > 1
+        for card in self.cards:
+            card.update_line_visibility(is_multiple_cities)
 
 window = MainWindow()
         
