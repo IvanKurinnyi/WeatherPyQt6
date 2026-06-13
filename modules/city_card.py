@@ -3,7 +3,7 @@ import PyQt6.QtCore as core
 from PyQt6.QtCore import pyqtSignal
 import PyQt6.QtGui as gui
 from PyQt6.QtSvgWidgets import QSvgWidget
-from .api_request import api_request, API_KEY
+from .api_request import api_request, API_KEY, lang
 from .time import find_time
 from datetime import datetime
 import requests
@@ -180,7 +180,7 @@ class Card(widget.QFrame):
         self.selected.emit()
 
     def update_weather(self, city_name):
-        city_request = api_request(city=city_name, API_KEY=API_KEY)
+        city_request = api_request(city=city_name, API_KEY=API_KEY, lang=lang)
     
         temp = str(round(city_request["main"]["temp"]))
         temp_max = str(city_request["main"]["temp_max"])
@@ -189,7 +189,10 @@ class Card(widget.QFrame):
         offset:int = int(city_request["timezone"])
         self.UPPER_RIGHT_LABEL.setText(temp + "°")
         self.BOTTOM_LEFT.setText(description.capitalize())
-        self.BOTTOM_RIGHT.setText(f"Макс.: {temp_max}°, мін.: {temp_min}°")
+        if lang == "en":
+            self.BOTTOM_RIGHT.setText(f"Max.: {temp_max}°, min.: {temp_min}°")
+        else: 
+            self.BOTTOM_RIGHT.setText(f"Макс.: {temp_max}°, мін.: {temp_min}°")
         self.TIME_LABEL.setText(find_time(offset))
         print("Погода оновлена!!!!")
     
@@ -197,7 +200,7 @@ class Card(widget.QFrame):
         now = datetime.now()
         minutes = now.minute
         if self.TIME_LABEL.text()[3:] != minutes:
-            city_request = api_request(city=city_name, API_KEY=API_KEY)
+            city_request = api_request(city=city_name, API_KEY=API_KEY, lang=lang)
             offset:int = int(city_request["timezone"])
             self.TIME_LABEL.setText(find_time(offset))
             

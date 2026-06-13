@@ -1,7 +1,7 @@
 import PyQt6.QtWidgets as widget
 import PyQt6.QtCore as core
 import PyQt6.QtGui as gui
-from .api_request import forecast_request, API_KEY
+from .api_request import forecast_request, API_KEY, lang
 
 class ForeCastGraph(widget.QFrame):
     def __init__(self, city_name, *args, **kwargs):
@@ -22,7 +22,10 @@ class ForeCastGraph(widget.QFrame):
         self.TOP_LAYOUT.setSpacing(8)
         self.LAYOUT.addWidget(self.TOP_FRAME)
 
-        self.TOP_TEXT = widget.QLabel("Прогноз на найближчий час")
+        if lang == "en":
+            self.TOP_TEXT = widget.QLabel("Forecast for the near future")
+        else:
+            self.TOP_TEXT = widget.QLabel("Прогноз на найближчий час")
         self.TOP_TEXT.setStyleSheet("font-size:16px; color:white")
         self.TOP_LAYOUT.addWidget(self.TOP_TEXT)
 
@@ -38,27 +41,24 @@ class ForeCastGraph(widget.QFrame):
         self.DOWN_LAYOUT.setSpacing(0)
         self.LAYOUT.addWidget(self.DOWN_FRAME)
 
-        # --- Создаем структуру для Иконок (зеркальную структуре графика) ---
+
         self.ICON_FORECAST = widget.QFrame()
         self.ICON_FORECAST.setFixedHeight(24)
         self.ICON_LAYOUT = widget.QHBoxLayout(self.ICON_FORECAST)
         self.ICON_LAYOUT.setContentsMargins(0, 0, 0, 0)
-        self.ICON_LAYOUT.setSpacing(6) # Такой же отступ, как у графика ниже
+        self.ICON_LAYOUT.setSpacing(6) 
         self.DOWN_LAYOUT.addWidget(self.ICON_FORECAST)
 
-        # Контейнер, куда будут сыпаться сами иконки
         self.ICON_BARS_FRAME = widget.QFrame()
         self.ICON_BARS_LAYOUT = widget.QHBoxLayout(self.ICON_BARS_FRAME)
         self.ICON_BARS_LAYOUT.setContentsMargins(0, 0, 0, 0)
         self.ICON_BARS_LAYOUT.setSpacing(0)
         self.ICON_LAYOUT.addWidget(self.ICON_BARS_FRAME)
 
-        # Невидимая заглушка справа, чтобы сдвинуть иконки влево от цифр градусов
         self.ICON_SPACER = widget.QFrame()
-        self.ICON_SPACER.setFixedWidth(22) # Ровно по ширине NUMBERS_FRAME
+        self.ICON_SPACER.setFixedWidth(22)
         self.ICON_LAYOUT.addWidget(self.ICON_SPACER)
 
-        # --- Структура для Столбиков Графика ---
         self.GRAPHIC = widget.QFrame()
         self.GRAPHIC_LAYOUT = widget.QHBoxLayout(self.GRAPHIC)
         self.GRAPHIC_LAYOUT.setContentsMargins(0, 0, 0, 0)
@@ -74,7 +74,7 @@ class ForeCastGraph(widget.QFrame):
         
         self.NUMBERS_FRAME = widget.QFrame()
         self.NUMBERS_FRAME.setFixedHeight(95)
-        self.NUMBERS_FRAME.setFixedWidth(22) # Зафиксировали ширину для точного выравнивания
+        self.NUMBERS_FRAME.setFixedWidth(22)
         self.TEMP_LAYOUT = widget.QVBoxLayout(self.NUMBERS_FRAME)
         self.TEMP_LAYOUT.setContentsMargins(0, 0, 0, 0)
         self.TEMP_LAYOUT.setSpacing(1)
@@ -101,7 +101,7 @@ class ForeCastGraph(widget.QFrame):
 
     def update_forecast(self, city_name):
         try:
-            api_data = forecast_request(city=city_name, API_KEY=API_KEY)
+            api_data = forecast_request(city=city_name, API_KEY=API_KEY, lang=lang)
             raw_data = api_data["list"][:16]
         except Exception as e:
             print(f"Помилка оновлення графіка: {e}")
@@ -122,7 +122,7 @@ class ForeCastGraph(widget.QFrame):
         self.draw_graph()
 
     def draw_graph(self):
-        self.clear_layout(self.ICON_BARS_LAYOUT) # Очищаем только контейнер с иконками
+        self.clear_layout(self.ICON_BARS_LAYOUT)
         self.clear_layout(self.COLUMN_LAYOUT)
 
         min_temp = -5
@@ -133,7 +133,6 @@ class ForeCastGraph(widget.QFrame):
             return
 
         for item in self.interpolated_data:
-            # --- 1. Контейнер для Иконки ---
             icon_container = widget.QFrame()
             icon_container.setFixedHeight(24)
             icon_container.setSizePolicy(widget.QSizePolicy.Policy.Expanding, widget.QSizePolicy.Policy.Fixed)
@@ -151,7 +150,6 @@ class ForeCastGraph(widget.QFrame):
                     
             self.ICON_BARS_LAYOUT.addWidget(icon_container, stretch=1)
 
-            # --- 2. Контейнер для Столбика ---
             col_container = widget.QFrame()
             col_container.setFixedHeight(max_height)
             col_container.setSizePolicy(widget.QSizePolicy.Policy.Expanding, widget.QSizePolicy.Policy.Fixed)

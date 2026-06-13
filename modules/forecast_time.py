@@ -1,7 +1,8 @@
 import PyQt6.QtWidgets as widget
 import PyQt6.QtCore as core
 import PyQt6.QtGui as gui
-from .api_request import forecast_request, API_KEY
+from .read_write_json import read_json, create_json
+from .api_request import forecast_request, API_KEY, lang
 
 
 class ForeCastTime(widget.QFrame):
@@ -12,9 +13,14 @@ class ForeCastTime(widget.QFrame):
         self.setFixedHeight(self.HEIGHT)
         self.setMinimumWidth(self.WIDTH)
         
+        settings = read_json("settings.json")
+        print(settings.get("currentResolution"))
+        
+        
         
         self.ALL_FORECAST_DATA = [] 
-        self.CURRENT_INDEX = 0      
+        self.CURRENT_INDEX = 0 
+             
         self.ITEMS_TO_SHOW = 10
 
         self.setStyleSheet("background-color: rgba(0,0,0,0.2); border: none; border-radius: 10px")
@@ -67,7 +73,7 @@ class ForeCastTime(widget.QFrame):
 
     def update_city_time(self, city_name):
 
-        response = forecast_request(city=city_name, API_KEY=API_KEY)
+        response = forecast_request(city=city_name, API_KEY=API_KEY, lang=lang)
         description:str = response["list"][0]["weather"][0]["description"]
         self.TOP_TEXT.setText(f"{description.capitalize()}")
         if response and "list" in response:
@@ -77,12 +83,10 @@ class ForeCastTime(widget.QFrame):
 
 
     def render_forecast(self):
-
         while self.CENTRAL_LAYOUT.count():
             item = self.CENTRAL_LAYOUT.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
-        
         
         display_data = self.ALL_FORECAST_DATA[self.CURRENT_INDEX : self.CURRENT_INDEX + self.ITEMS_TO_SHOW]
         
@@ -98,7 +102,11 @@ class ForeCastTime(widget.QFrame):
             card_layout.setSpacing(4)
             
             is_now = (self.CURRENT_INDEX == 0 and i == 0)
-            label_time = widget.QLabel("Зараз" if is_now else time_str[11:16])
+            if lang == "en":
+                label_time = widget.QLabel("Now" if is_now else time_str[11:16])
+            else:
+                label_time = widget.QLabel("Зараз" if is_now else time_str[11:16])
+        
             label_time.setStyleSheet("color: white; font-size: 13px")
             label_time.setAlignment(core.Qt.AlignmentFlag.AlignCenter)
             

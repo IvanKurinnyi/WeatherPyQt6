@@ -13,6 +13,7 @@ from .forecast_time import ForeCastTime
 from .forecast_graphic import ForeCastGraph
 import requests
 from .read_write_json import read_json, create_json
+from .api_request import lang
 
 class MainWindow(widget.QMainWindow):
     def __init__(self, *args, **kwargs):
@@ -92,7 +93,6 @@ class MainWindow(widget.QMainWindow):
         self.LEFT_LAYOUT.addWidget(self.TOGGLE_SWITCH, alignment=core.Qt.AlignmentFlag.AlignRight)
 
         self.RIGHT_CARDS_FRAME = widget.QFrame(self.RIGHT_FRAME)
-        # self.RIGHT_CARDS_FRAME.setMinimumSize(core.QSize(788, 733)) 
         self.RIGHT_LAYOUT.addWidget(self.RIGHT_CARDS_FRAME, stretch=1)
         
         self.RIGHT_CARDS_LAYOUT = widget.QVBoxLayout(self.RIGHT_CARDS_FRAME)
@@ -154,9 +154,8 @@ class MainWindow(widget.QMainWindow):
         self.cards = []
         self.selected_card = None
         current_city = self.city_request()
-        
-        # create_json(data=["Dnipro","Kyiv","Odessa"] ,name_file="city.json")
-        city = read_json(name_file="city.json")
+
+        city = read_json(name_file=f"city_{lang}.json")
 
         
         city_list = [current_city]
@@ -192,6 +191,7 @@ class MainWindow(widget.QMainWindow):
         self.CITY_TIME_CARD.minute_update(city_name)
         self.FORECAST_TIME.update_city_time(city_name)
         self.FORECAST_GRAPH.update_forecast(city_name)
+        self.SEARCH_BAR.update_city_map(city_name)
 
         for card in self.cards:
             if card.city_name.lower() == city_name.lower():

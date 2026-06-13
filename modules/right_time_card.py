@@ -5,7 +5,7 @@ from PyQt6.QtSvgWidgets import QSvgWidget
 from datetime import datetime
 import locale
 from .time import find_time
-from .api_request import api_request, API_KEY
+from .api_request import api_request, API_KEY, lang
 
 class RightTimeCard(widget.QFrame):
     def __init__(self, *args, **kwargs):
@@ -34,7 +34,10 @@ class RightTimeCard(widget.QFrame):
         self.TOP_SECTION_LAYOUT.setContentsMargins(0, 0, 0, 0)
         self.TOP_SECTION_LAYOUT.setSpacing(0)
 
-        self.TOP_TEXT = widget.QLabel("Сьогоднi")
+        if lang == "en":
+            self.TOP_TEXT = widget.QLabel("Today")
+        else: 
+            self.TOP_TEXT = widget.QLabel("Сьогоднi")
         self.TOP_TEXT.setStyleSheet("color: white; font-size: 16px; font-family: 'Roboto'; font-weight: 500;")
         self.LAYOUT.addWidget(self.TOP_TEXT, alignment=core.Qt.AlignmentFlag.AlignLeft)
 
@@ -53,7 +56,14 @@ class RightTimeCard(widget.QFrame):
         self.DATE_FRAME = widget.QFrame()
         self.DATE_LAYOUT = widget.QHBoxLayout(self.DATE_FRAME)
         
-        self.WEEK_DAY = widget.QLabel(self.NOW.strftime("%A").capitalize(), self.DATE_FRAME)
+        weekdays = {
+            'en': ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+            'ua': ["Понеділок", "Вівторок", "Середа", "Четвер", "П'ятниця", "Субота", "Неділя"]
+        }
+        day_index = self.NOW.weekday()
+        day_text = weekdays[lang][day_index]
+        
+        self.WEEK_DAY = widget.QLabel(day_text, self.DATE_FRAME)
         self.WEEK_DAY.setAlignment(core.Qt.AlignmentFlag.AlignLeft)
         self.WEEK_DAY.setStyleSheet("font-size: 24px; font-weight: bold; font-family: 'Roboto'; color: white; background: none;")
         self.DATE_LAYOUT.addWidget(self.WEEK_DAY)
@@ -97,7 +107,7 @@ class RightTimeCard(widget.QFrame):
         now = datetime.now()
         minutes = now.minute
         if self.TIME.text()[3:] != minutes:
-            city_request = api_request(city=city_name, API_KEY=API_KEY)
+            city_request = api_request(city=city_name, API_KEY=API_KEY, lang=lang)
             offset:int = int(city_request["timezone"])
             self.TIME.setText(find_time(offset))
         

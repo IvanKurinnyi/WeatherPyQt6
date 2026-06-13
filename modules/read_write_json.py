@@ -1,6 +1,5 @@
 import json
 
-
 def create_json(data: dict, name_file:str):
     with open(file=f"{name_file}", mode="w", encoding='utf-8', errors='replace') as file:
         file.write(json.dumps(data, ensure_ascii=False, indent=4))

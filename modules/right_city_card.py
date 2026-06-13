@@ -1,7 +1,7 @@
 import PyQt6.QtWidgets as widget
 import PyQt6.QtCore as core
 from PyQt6.QtSvgWidgets import QSvgWidget
-from .api_request import api_request, API_KEY
+from .api_request import api_request, API_KEY, lang
 import PyQt6.QtGui as gui
 from PIL import Image
 from PIL.ImageQt import ImageQt
@@ -34,16 +34,14 @@ class RightCityCard(widget.QFrame):
         self.ICON_TEXT_LAYOUT.setContentsMargins(0, 0, 0, 0)
         self.ICON_TEXT_LAYOUT.setSpacing(8)
 
-        
-        #self.TOP_ICON = widget.QLabel()
-        #self.TOP_PIXMAP = gui.QPixmap("media/city_card/navigation.svg")
-        #self.TOP_ICON.setPixmap(self.TOP_PIXMAP.scaled(76,76))
-
 
         self.TOP_FRAME_ICON = QSvgWidget("media/city_card/navigation.svg")
         self.TOP_FRAME_ICON.setFixedSize(16, 16)
         
-        self.TOP_TEXT = widget.QLabel("Поточна позiцiя")
+        if lang == "en":
+            self.TOP_TEXT = widget.QLabel("Сurrent position")
+        else:
+            self.TOP_TEXT = widget.QLabel("Поточна позiцiя")
         self.TOP_TEXT.setStyleSheet("color: white; font-size: 16px; font-family: 'Roboto'; font-weight: 500;")
         
         self.ICON_TEXT_LAYOUT.addWidget(self.TOP_FRAME_ICON)
@@ -76,12 +74,7 @@ class RightCityCard(widget.QFrame):
         
         self.WEATHER_ICON = widget.QLabel()
         self.TOP_PIXMAP = gui.QPixmap("media/right_frame/Cloudy.svg")
-        # self.WEATHER_ICON.resize(76, 76)
-        #self.WEATHER_ICON.setPixmap(self.TOP_PIXMAP.scaled(76,76))
 
-        #self.WEATHER_ICON = QSvgWidget("media/right_frame/Cloudy.svg")
-        
-        
         
         self.DEGREE = widget.QLabel("")
         self.DEGREE.setStyleSheet("font-size: 74px; color: white; font-family: 'Roboto';font-weight: 500; background: none;")
@@ -105,7 +98,7 @@ class RightCityCard(widget.QFrame):
         self.LAYOUT.addStretch()
 
     def update_city_data(self, city_name):
-        city_request = api_request(city=city_name, API_KEY=API_KEY)
+        city_request = api_request(city=city_name, API_KEY=API_KEY, lang=lang)
         
         temp = str(round(city_request["main"]["temp"]))
         temp_max = str(city_request["main"]["temp_max"])
@@ -114,9 +107,10 @@ class RightCityCard(widget.QFrame):
         icon_path = f"media/right_frame/weather_icons/{city_request["weather"][0]["icon"]}.svg"
         self.CITY_LABEL.setText(city_name.capitalize())
         self.DEGREE.setText(temp + "°")
-        #self.WEATHER_ICON.load(icon_path)
-        #self.WEATHER_ICON = widget.QLabel()
         self.TOP_PIXMAP = gui.QPixmap(icon_path)
         self.WEATHER_ICON.setPixmap(self.TOP_PIXMAP.scaled(140,140, core.Qt.AspectRatioMode.KeepAspectRatio, core.Qt.TransformationMode.SmoothTransformation))
         self.STAT_LABEL.setText(description.capitalize())
-        self.MINMAX_LABEL.setText(f"Макс.: {temp_max}°, мін.: {temp_min}°")
+        if lang == "en":
+            self.MINMAX_LABEL.setText(f"Max.: {temp_max}°, min.: {temp_min}°")
+        else: 
+            self.MINMAX_LABEL.setText(f"Макс.: {temp_max}°, мін.: {temp_min}°")
