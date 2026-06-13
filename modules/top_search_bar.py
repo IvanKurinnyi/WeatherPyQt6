@@ -17,7 +17,11 @@ class SearchBar(widget.QFrame):
     
     def __init__(self,*args, **kwargs):
         super().__init__(*args, **kwargs)
+
         
+
+        
+
         self.CITIES_DATA = read_json("cities.json")
         #self.CITY_NAMES = [city_obj.get('city', '').lower() for city_obj in self.CITIES_DATA]
         self.DYNAMIC_LABELS = []
@@ -318,7 +322,7 @@ class SearchBar(widget.QFrame):
         self.COUNTRY_LAYOUT.addWidget(self.COUNTRY_GROUP_FRAME)
 
         countrys_json = read_json("countries.json")
-        countries = [item["name"] for item in countrys_json["data"]]
+        countries = [country["name"] for country in countrys_json["data"]]
 
         self.COUNTRY_LABEL = widget.QLabel("Країна")
         self.COUNTRY_LABEL.setStyleSheet("color:white; font-weight:500;font-size:14px;text-align: left;")
@@ -551,6 +555,10 @@ class SearchBar(widget.QFrame):
         self.RESOLUTION.clicked.connect(self.resolution_settings)
         self.LANGUAGE.clicked.connect(self.language_settings)
         self.IMG_LIST.clicked.connect(self.image_list)    
+        self.COUNTRY_COMBOBOX.currentTextChanged.connect(self.update_country_map)
+        self.COUNTRY_COMBOBOX.currentTextChanged.connect(self.update_cities_by_country)
+        self.CITY_COMBOBOX.currentTextChanged.connect(self.update_city_map)
+        self.CITY_COMBOBOX.currentTextChanged.connect(self.update_coordinates_display)
 
     def clear_old_results(self):
         for lbl in self.DYNAMIC_LABELS:
@@ -769,27 +777,19 @@ class SearchBar(widget.QFrame):
         else:
             self.CITY_COMBOBOX.addItem("Немає міст")
     def update_coordinates_display(self, city_name):
+
         if not city_name or city_name in ["Виберіть місто", "Немає міст"]:
             self.COORDS_QLINEEDIT.clear()
             return
-        
-        try:
-            
-            url = f"https://nominatim.openstreetmap.org/search?q={city_name}&format=json"
-            res = requests.get(url, headers={"User-Agent": "my-app"}, timeout=5)
-            
-            if res.status_code == 200 and res.json():
-                data = res.json()[0]  
-                lat = data.get("lat", "")
-                lon = data.get("lon", "")
-                
-               
-                self.COORDS_QLINEEDIT.setText(f"{lat}, {lon}")
-            else:
-                self.COORDS_QLINEEDIT.setText("Координати не знайдені")
-        except Exception as e:
-            print(f"Помилка при отриманні координат: {e}")
-            self.COORDS_QLINEEDIT.setText("Помилка при отриманні")
+
+        coords = self.get_coords(city_name)
+
+        if not coords:
+            self.COORDS_QLINEEDIT.setText("Не знайдено")
+            return
+
+        lat, lon = coords
+        self.COORDS_QLINEEDIT.setText(f"{lat}, {lon}")
 
     def save_selected_city(self):
         
@@ -818,54 +818,15 @@ class SearchBar(widget.QFrame):
         if not city_name or city_name in ["Виберіть місто", "Немає міст"]:
             return
 
-        try:
-            url = f"https://nominatim.openstreetmap.org/search?q={city_name}&format=json"
+        coords = self.get_coords(city_name)
 
-            response = requests.get(
-                url,
-                headers={"User-Agent": "my-app"},
-                timeout=5
-            )
+        if not coords:
+            print("[MAP] City not found in JSON")
+            return
 
-            data = response.json()
+        lat, lon = coords
 
-            if not data:
-                print(f"[MAP] Місто {city_name} не знайдено")
-                return
-
-            lat = float(data[0]["lat"])
-            lon = float(data[0]["lon"])
-
-            
-
-            self.WEBMAP = folium.Map(
-                location=[lat, lon],
-                zoom_start=10,
-                tiles="OpenStreetMap"
-            )
-
-            folium.Marker(
-                [lat, lon],
-                popup=city_name,
-                tooltip=city_name
-            ).add_to(self.WEBMAP)
-
-            data_buffer = io.BytesIO()
-
-            self.WEBMAP.save(
-                data_buffer,
-                close_file=False
-            )
-
-            self.WEB_VIEW.setHtml(
-                data_buffer.getvalue().decode()
-            )
-
-            
-
-        except Exception as e:
-            print(f"[MAP ERROR] {e}")
-
+        self._render_map(lat, lon, city_name)
 
     def delete_city(self, city_name):
         city_name = city_name.strip()
@@ -910,5 +871,89 @@ class SearchBar(widget.QFrame):
 
         self.added_city_frames[city_name.lower()] = frame
 
+    def _render_map(self, lat, lon, label=""):
+        self.WEBMAP = folium.Map(
+            location=[lat, lon],
+            zoom_start=10,
+            tiles="OpenStreetMap"
+        )
 
+        folium.Marker(
+            [lat, lon],
+            popup=label,
+            tooltip=label
+        ).add_to(self.WEBMAP)
+
+        data = io.BytesIO()
+        self.WEBMAP.save(data, close_file=False)
+
+        self.WEB_VIEW.setHtml(data.getvalue().decode())
     
+
+    def update_city_map(self, city_name):
+
+        if not city_name or city_name in ["Виберіть місто", "Немає міст"]:
+            return
+
+        coords = self.get_coords(city_name)
+
+        if not coords:
+            print("[MAP] City not found in JSON")
+            return
+
+        lat, lon = coords
+
+        self._render_map(lat, lon, city_name)
+
+    def update_country_map(self, country_name):
+
+        cities = [
+            c for c in self.CITIES_DATA
+            if c.get("country_name", "").lower() == country_name.lower()
+        ]
+
+        if not cities:
+            return
+
+        city = cities[0]
+
+        lat = float(city["latitude"])
+        lon = float(city["longitude"])
+
+        self._render_map(lat, lon, country_name)
+
+    def update_cities_by_country(self, country_name):
+
+        self.CITY_COMBOBOX.clear()
+        self.CITY_COMBOBOX.addItem("Виберіть місто")
+
+        if not country_name:
+            return
+
+        cities = [
+            c.get("name")
+            for c in self.CITIES_DATA
+            if c.get("country_name", "").lower() == country_name.lower()
+        ]
+
+        if not cities:
+            self.CITY_COMBOBOX.addItem("Немає міст")
+            return
+
+        self.CITY_COMBOBOX.addItems(cities)
+
+
+    def get_coords(self, city_name):
+            city = self.find_city(city_name)
+
+            if not city:
+                return None
+
+            return float(city["latitude"]), float(city["longitude"])
+    
+    def find_city(self, city_name):
+            return next(
+            (c for c in self.CITIES_DATA
+             if c.get("name", "").lower() == city_name.lower()),
+            None
+        )

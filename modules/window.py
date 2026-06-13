@@ -192,6 +192,7 @@ class MainWindow(widget.QMainWindow):
         self.CITY_TIME_CARD.minute_update(city_name)
         self.FORECAST_TIME.update_city_time(city_name)
         self.FORECAST_GRAPH.update_forecast(city_name)
+        self.SEARCH_BAR.update_city_map(city_name)
 
         for card in self.cards:
             if card.city_name.lower() == city_name.lower():
