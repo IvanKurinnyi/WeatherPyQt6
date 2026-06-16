@@ -108,6 +108,8 @@ class MainWindow(widget.QMainWindow):
         self.SEARCH_BAR.city_added.connect(self.on_city_added)
         self.SEARCH_BAR.city_removed.connect(self.city_remove)
         self.SEARCH_BAR.resolution_changed.connect(self.update_window_resolution)
+        self.SEARCH_BAR.city_added.connect(self.handle_city_added_dynamically)
+        self.SEARCH_BAR.city_removed.connect(self.city_remove)
         
         
         
@@ -288,6 +290,23 @@ class MainWindow(widget.QMainWindow):
         is_multiple_cities = len(self.cards) > 1
         for card in self.cards:
             card.update_line_visibility(is_multiple_cities)
+
+    def handle_city_added_dynamically(self, city_name):
+        
+        for card in self.cards:
+            if card.city_name.lower() == city_name.lower():
+                return
+                
+       
+        card = Card(parent=self.SCROLL_FRAME, city_name=city_name, scroll_frame=self.SCROLL_FRAME)
+        self.cards.append(card)
+        
+       
+        self.SCROLL_LAYOUT.addWidget(card)
+        self.SCROLL_LAYOUT.addWidget(card.BOTTOM_LINE)
+        
+        
+        self._update_all_lines_visibility()
 
 window = MainWindow()
         
