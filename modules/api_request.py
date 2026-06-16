@@ -3,11 +3,11 @@ import os
 import json
 
 def read_json(name_file: str) -> dict:
-    with open(file=f"{name_file}", mode="r", encoding='utf-8', errors='replace') as file:
+    with open(file=f"instances/{name_file}", mode="r", encoding='utf-8', errors='replace') as file:
         return json.load(file)
 
 def create_json(data: dict, name_file:str):
-    with open(file=f"{name_file}", mode="w") as file:
+    with open(file=f"instances/{name_file}", mode="w") as file:
         file.write(json.dumps(data, ensure_ascii=False, indent=4))
 
 API_KEY = os.getenv("API_KEY") 
@@ -18,10 +18,14 @@ settings = read_json("settings.json")
 lang = settings["language"]
 
 def api_request(city:str, API_KEY:str, lang:str):
-    url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={API_KEY}&units=metric&lang={lang}"
-    response = requests.get(url)
-    response_dict = response.json()
-    return response_dict
+    try:
+        url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={API_KEY}&units=metric&lang={lang}"
+        response = requests.get(url)
+        response_dict = response.json()
+        return response_dict
+    except Exception as e:
+        print("error")
+        return []
 
 def forecast_request(city:str, API_KEY:str, lang:str):
     url = f"https://api.openweathermap.org/data/2.5/forecast?q={city}&appid={API_KEY}&units=metric&lang={lang}"

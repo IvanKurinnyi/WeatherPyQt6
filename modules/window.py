@@ -180,7 +180,6 @@ class MainWindow(widget.QMainWindow):
                 alignment=core.Qt.AlignmentFlag.AlignCenter
                 )
         
-        # Обновить видимость линий в зависимости от количества городов
         self._update_all_lines_visibility()
 
         self.SCROLL_LAYOUT.addStretch(1)
@@ -253,11 +252,11 @@ class MainWindow(widget.QMainWindow):
      
         self.X = (app.primaryScreen().size().width() - self.WIDTH) // 2
         self.Y = (app.primaryScreen().size().height() - self.HEIGHT) // 2
-        
+
+        self.RIGHT_CITY_CARD.change_size()
+        self.CITY_TIME_CARD.change_clock()
         
         self.setGeometry(self.X, self.Y, self.WIDTH, self.HEIGHT)
-        
-        
         self.TITLE_BAR.setGeometry(0, 0, self.WIDTH, 20)
 
     def city_request(self):

@@ -423,13 +423,31 @@ class SearchBar(widget.QFrame):
         self.ADDED_CITIES_LABEL.setStyleSheet("color:white; font-weight:400;font-size:18px;text-align: left;")
         self.CITY_SEARCH_LAYOUT.addWidget(self.ADDED_CITIES_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
 
+        self.SCROLL_AREA = widget.QScrollArea(parent=self)
+        self.SCROLL_AREA.setVerticalScrollBarPolicy(core.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.SCROLL_AREA.setWidgetResizable(True)
+
+        self.SCROLL_AREA.setFixedSize(core.QSize(544, 160))
+
+        self.SCROLL_AREA.setStyleSheet("""
+            QScrollArea { background-color: rgba(0, 0, 0, 0.2); border: none; }
+            QScrollArea > QWidget > QWidget { background: transparent; }
+        """)
+
+        self.CITY_SEARCH_LAYOUT.addWidget(self.SCROLL_AREA, alignment=core.Qt.AlignmentFlag.AlignLeft)
+
+
         self.ADDED_CITIES_FRAME = widget.QFrame()
-        self.ADDED_CITIES_FRAME.setStyleSheet("background-color: rgba(0, 0, 0, 0.2)")
-        self.ADDED_CITIES_FRAME.setFixedSize(core.QSize(544,160))
-        self.CITY_SEARCH_LAYOUT.addWidget(self.ADDED_CITIES_FRAME, alignment=core.Qt.AlignmentFlag.AlignLeft)
+        self.ADDED_CITIES_FRAME.setStyleSheet("background: transparent;")
+
         self.ADDED_CITIES_LAYOUT = widget.QVBoxLayout(self.ADDED_CITIES_FRAME)
-        self.ADDED_CITIES_LAYOUT.setContentsMargins(16,16,16,16)
+        self.ADDED_CITIES_LAYOUT.setContentsMargins(16, 16, 16, 16)
         self.ADDED_CITIES_LAYOUT.setSpacing(0)
+
+        self.ADDED_CITIES_LAYOUT.setAlignment(core.Qt.AlignmentFlag.AlignTop)
+
+        self.SCROLL_AREA.setWidget(self.ADDED_CITIES_FRAME)
+
         
         try:
             cities = read_json(f"city_{lang}.json")
@@ -898,7 +916,7 @@ class SearchBar(widget.QFrame):
 
         row_layout = widget.QHBoxLayout(frame) 
         label = widget.QLabel(city_name)
-        label.setStyleSheet("color: white; font-size: 14px;")
+        label.setStyleSheet("color: white; font-size: 14px; margin-top:-5px")
 
         trash_btn = widget.QPushButton()
         trash_btn.setFixedSize(core.QSize(16,16))

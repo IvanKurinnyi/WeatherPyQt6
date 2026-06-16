@@ -13,22 +13,17 @@ class ForeCastTime(widget.QFrame):
         self.setFixedHeight(self.HEIGHT)
         self.setMinimumWidth(self.WIDTH)
         
-        settings = read_json("settings.json")
-        print(settings.get("currentResolution"))
-        
-        
-        
         self.ALL_FORECAST_DATA = [] 
-        self.CURRENT_INDEX = 0 
-             
-        self.ITEMS_TO_SHOW = 10
+        self.MAX_CARDS = 30  
 
         self.setStyleSheet("background-color: rgba(0,0,0,0.2); border: none; border-radius: 10px")
+        
         
         self.LAYOUT = widget.QVBoxLayout(self)
         self.LAYOUT.setContentsMargins(16, 16, 16, 16)
         self.LAYOUT.setSpacing(16)
 
+        
         self.TOP_FRAME = widget.QFrame()
         self.TOP_FRAME.setStyleSheet("background-color: none")
         self.TOP_LAYOUT = widget.QVBoxLayout(self.TOP_FRAME)
@@ -43,6 +38,7 @@ class ForeCastTime(widget.QFrame):
         self.TOP_LAYOUT.addWidget(self.LINE)
         self.LAYOUT.addWidget(self.TOP_FRAME)
 
+        
         self.DOWN_FRAME = widget.QFrame()
         self.DOWN_FRAME.setStyleSheet("background-color: none")
         self.DOWN_LAYOUT = widget.QHBoxLayout(self.DOWN_FRAME)
@@ -53,42 +49,79 @@ class ForeCastTime(widget.QFrame):
         self.LEFT_BUTTON = widget.QPushButton()
         self.LEFT_BUTTON.setIcon(gui.QIcon("media/right_frame/arrow_left.svg"))
         self.LEFT_BUTTON.setFixedSize(16, 16)
-        self.LEFT_BUTTON.clicked.connect(self.show_previous)
+        self.LEFT_BUTTON.clicked.connect(self.scroll_left)
         self.DOWN_LAYOUT.addWidget(self.LEFT_BUTTON)
-
         
-        self.CENTRAL = widget.QFrame()
-        self.CENTRAL.setFixedSize(676, 85)
+        self.SCROLL_AREA = widget.QScrollArea()
+        self.SCROLL_AREA.setFixedHeight(85)
+        self.SCROLL_AREA.setMinimumWidth(675)
+        self.SCROLL_AREA.setWidgetResizable(True)
+        
+        
+        self.SCROLL_AREA.setHorizontalScrollBarPolicy(core.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.SCROLL_AREA.setVerticalScrollBarPolicy(core.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+        self.SCROLL_AREA.setStyleSheet("""
+            QScrollArea { background: transparent; border: none; }
+            QScrollBar:horizontal { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; }
+            QScrollBar::handle:horizontal { background: rgba(255,255,255,0.4); border-radius: 2px; }
+            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0px; }
+        """)
+
+        self.SCROLL_AREA.wheelEvent = self.scroll_area_wheel_event
+        
+        self.CENTRAL = widget.QWidget()
+        self.CENTRAL.setStyleSheet("background: transparent;")
         self.CENTRAL_LAYOUT = widget.QHBoxLayout(self.CENTRAL)
         self.CENTRAL_LAYOUT.setContentsMargins(0, 0, 0, 0)
-        self.CENTRAL_LAYOUT.setSpacing(10) 
-        self.DOWN_LAYOUT.addWidget(self.CENTRAL, alignment=core.Qt.AlignmentFlag.AlignCenter)
+        self.CENTRAL_LAYOUT.setSpacing(10)
+        
+        self.CENTRAL_LAYOUT.setSizeConstraint(widget.QLayout.SizeConstraint.SetMinAndMaxSize)
 
+        self.SCROLL_AREA.setWidget(self.CENTRAL)
+        self.DOWN_LAYOUT.addWidget(self.SCROLL_AREA, stretch = 1)
+        
         
         self.RIGHT_BUTTON = widget.QPushButton()
         self.RIGHT_BUTTON.setIcon(gui.QIcon("media/right_frame/arrow_right.svg"))
         self.RIGHT_BUTTON.setFixedSize(16, 16)
-        self.RIGHT_BUTTON.clicked.connect(self.show_next)
+        self.RIGHT_BUTTON.clicked.connect(self.scroll_right)
         self.DOWN_LAYOUT.addWidget(self.RIGHT_BUTTON)
 
-    def update_city_time(self, city_name):
+    def scroll_area_wheel_event(self, event):
+        
+        angle = event.angleDelta().y()
+        if angle == 0:
+            angle = event.angleDelta().x()
+            
+        current = self.SCROLL_AREA.horizontalScrollBar().value()
+        
+        self.SCROLL_AREA.horizontalScrollBar().setValue(current - angle)
+        event.accept()
 
+    def update_city_time(self, city_name):
         response = forecast_request(city=city_name, API_KEY=API_KEY, lang=lang)
-        description:str = response["list"][0]["weather"][0]["description"]
-        self.TOP_TEXT.setText(f"{description.capitalize()}")
         if response and "list" in response:
+            description = response["list"][0]["weather"][0]["description"]
+            self.TOP_TEXT.setText(f"{description.capitalize()}")
+            
             self.ALL_FORECAST_DATA = response["list"]
-            self.CURRENT_INDEX = 0
             self.render_forecast()
 
-
     def render_forecast(self):
+        
         while self.CENTRAL_LAYOUT.count():
             item = self.CENTRAL_LAYOUT.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+            w = item.widget()
+            if w:
+                w.setParent(None)
+                w.deleteLater()
         
-        display_data = self.ALL_FORECAST_DATA[self.CURRENT_INDEX : self.CURRENT_INDEX + self.ITEMS_TO_SHOW]
+        
+        self.SCROLL_AREA.horizontalScrollBar().setValue(0)
+
+       
+        display_data = self.ALL_FORECAST_DATA[:self.MAX_CARDS]
         
         for i, item in enumerate(display_data):
             time_str = item["dt_txt"]
@@ -101,7 +134,7 @@ class ForeCastTime(widget.QFrame):
             card_layout.setContentsMargins(0, 0, 0, 0)
             card_layout.setSpacing(4)
             
-            is_now = (self.CURRENT_INDEX == 0 and i == 0)
+            is_now = (i == 0)
             if lang == "en":
                 label_time = widget.QLabel("Now" if is_now else time_str[11:16])
             else:
@@ -115,7 +148,6 @@ class ForeCastTime(widget.QFrame):
             icon_label.setPixmap(pix.scaled(24, 24, core.Qt.AspectRatioMode.KeepAspectRatio, core.Qt.TransformationMode.SmoothTransformation))
             icon_label.setAlignment(core.Qt.AlignmentFlag.AlignCenter)
             
-
             label_temp = widget.QLabel(f"{temp}°")
             label_temp.setStyleSheet("color: white; font-size: 15px; font-weight: bold")
             label_temp.setAlignment(core.Qt.AlignmentFlag.AlignCenter)
@@ -126,14 +158,12 @@ class ForeCastTime(widget.QFrame):
             
             self.CENTRAL_LAYOUT.addWidget(card)
 
-    def show_next(self):
+    def scroll_left(self):
+        
+        current = self.SCROLL_AREA.horizontalScrollBar().value()
+        self.SCROLL_AREA.horizontalScrollBar().setValue(current - 75)
 
-        if self.CURRENT_INDEX + self.ITEMS_TO_SHOW < len(self.ALL_FORECAST_DATA):
-            self.CURRENT_INDEX += 1
-            self.render_forecast()
-
-    def show_previous(self):
-
-        if self.CURRENT_INDEX > 0:
-            self.CURRENT_INDEX -= 1
-            self.render_forecast()
+    def scroll_right(self):
+        
+        current = self.SCROLL_AREA.horizontalScrollBar().value()
+        self.SCROLL_AREA.horizontalScrollBar().setValue(current + 75)

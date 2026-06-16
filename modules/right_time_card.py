@@ -1,6 +1,7 @@
 import PyQt6.QtWidgets as widget
 import PyQt6.QtCore as core
 from PyQt6.QtSvgWidgets import QSvgWidget
+from .read_write_json import read_json,create_json
 
 from datetime import datetime
 import locale
@@ -79,18 +80,19 @@ class RightTimeCard(widget.QFrame):
         self.WATCH_FRAME = widget.QWidget()
         
         self.WATCH_FRAME.setSizePolicy(widget.QSizePolicy.Policy.Expanding, widget.QSizePolicy.Policy.Expanding)
+        self.WATCH_FRAME.setMinimumSize(168,168)
         
         self.WATCH_LAYOUT = widget.QGridLayout(self.WATCH_FRAME)
         self.WATCH_LAYOUT.setContentsMargins(0, 0, 0, 0)
 
         self.WATCH = QSvgWidget("media/right_frame/watch.svg")
         self.WATCH.setSizePolicy(widget.QSizePolicy.Policy.Expanding, widget.QSizePolicy.Policy.Expanding)
-        self.WATCH.setMinimumSize(168, 168)
         self.WATCH.renderer().setAspectRatioMode(core.Qt.AspectRatioMode.KeepAspectRatio)
 
         self.TIME = widget.QLabel("")
-        self.TIME.setStyleSheet("font-size:29px; color: white; font-weight: 500; font-family: 'Roboto'; background: transparent;")
         self.TIME.setAlignment(core.Qt.AlignmentFlag.AlignCenter)
+        
+        self.change_clock()
 
         self.WATCH_LAYOUT.addWidget(self.WATCH, 0, 0, core.Qt.AlignmentFlag.AlignCenter)
         self.WATCH_LAYOUT.addWidget(self.TIME, 0, 0, core.Qt.AlignmentFlag.AlignCenter)
@@ -103,6 +105,8 @@ class RightTimeCard(widget.QFrame):
         
         self.LAYOUT.addStretch(1) 
  
+
+
     def minute_update(self, city_name):
         now = datetime.now()
         minutes = now.minute
@@ -111,3 +115,27 @@ class RightTimeCard(widget.QFrame):
             offset:int = int(city_request["timezone"])
             self.TIME.setText(find_time(offset))
         
+
+    def change_clock(self):
+
+        settings = read_json("settings.json")
+
+        print(settings.get("currentResolution"))
+
+        if settings.get("currentResolution") == ["1200","800"]:
+           self.WATCH.setMinimumSize(168, 168)
+           self.TIME.setStyleSheet("font-size:29px; color: white; font-weight: 500; font-family: 'Roboto'; background: transparent;")
+
+        elif settings.get("currentResolution") == ["1440","1024"]:
+            self.WATCH.setMinimumSize(260, 260)
+            self.TIME.setStyleSheet("font-size:36px; color: white; font-weight: 500; font-family: 'Roboto'; background: transparent;")
+
+        elif settings.get("currentResolution") == ["1512","982"]:
+            self.WATCH.setMinimumSize(255, 255)
+            self.TIME.setStyleSheet("font-size:36px; color: white; font-weight: 500; font-family: 'Roboto'; background: transparent;")
+
+        elif settings.get("currentResolution") == ["1728","1117"]:
+            self.WATCH.setMinimumSize(350, 350)
+            self.TIME.setStyleSheet("font-size:44px; color: white; font-weight: 500; font-family: 'Roboto'; background: transparent;")
+
+            
