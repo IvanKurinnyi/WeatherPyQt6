@@ -9,21 +9,31 @@ from .read_write_json import create_json, read_json
 from .combobox import ComboBox
 from .api_request import get_coordinates, lang
 import requests
+
 class SearchBar(widget.QFrame):
     city_selected = core.pyqtSignal(str, str)
     city_added = core.pyqtSignal(str)
     city_removed = core.pyqtSignal(str) 
     resolution_changed = core.pyqtSignal(int, int)  
     
-    def __init__(self,*args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.CITIES_DATA = read_json("cities.json")
-
         self.DYNAMIC_LABELS = []
 
-        #self.CITY_NAMES = self.get_names(self.CITIES_DATA)
-        #self.UA_CITIES = self.get_ua_names(self.CITIES_DATA)
+        # Формуємо списки назв для швидкої валідації (в нижньому регістрі)
+        self.CITY_NAMES = [
+            c.get("name", "").lower() 
+            for c in self.CITIES_DATA 
+            if isinstance(c, dict) and c.get("name") is not None
+        ]
+
+        self.UA_CITIES = [
+            c.get("translations", {}).get("uk", "").lower() 
+            for c in self.CITIES_DATA 
+            if isinstance(c, dict) and isinstance(c.get("translations"), dict) and c.get("translations").get("uk") is not None
+        ]
 
         self.setFixedHeight(36)
         self.setMinimumWidth(788)
@@ -47,20 +57,17 @@ class SearchBar(widget.QFrame):
         self.SETTINGS_LAYOUT.setAlignment(core.Qt.AlignmentFlag.AlignCenter)
         self.SETTINGS_LAYOUT.setSpacing(0)
         self.S_LAYOUT.addWidget(self.SETTINGS)
-        
-
 
         self.SETTINGS_ICON = QSvgWidget("media/right_frame/settings.svg", self.SETTINGS)
         self.SETTINGS_ICON.setStyleSheet("background-color:none;")
         self.SETTINGS_ICON.setFixedSize(core.QSize(16,16))
         self.SETTINGS_LAYOUT.addWidget(self.SETTINGS_ICON)
         
-        self.SETTINGS_label = widget.QLabel("Налаштування",self.SETTINGS_FRAME)
+        self.SETTINGS_label = widget.QLabel("Налаштування", self.SETTINGS_FRAME)
         self.SETTINGS_label.setStyleSheet("font-size:14px; font-weight:500;")
         self.S_LAYOUT.addWidget(self.SETTINGS_label)
 
         self.LAYOUT.addStretch(1) 
-
        
         self.ADD_BUTTON = widget.QPushButton(self)    
         self.ADD_BUTTON.setFixedSize(core.QSize(97, 36))
@@ -84,9 +91,9 @@ class SearchBar(widget.QFrame):
         self.ADD_ICON.setFixedSize(core.QSize(16, 16))
         
         if lang == "en":
-            self.ADD_TEXT = widget.QLabel("Додати", self.ADD_BUTTON)
-        else: 
             self.ADD_TEXT = widget.QLabel("Add", self.ADD_BUTTON)
+        else: 
+            self.ADD_TEXT = widget.QLabel("Додати", self.ADD_BUTTON)
         self.ADD_TEXT.setStyleSheet("color: white; font-size: 14px; font-weight: 500; background: none;")
         
         self.ADD_LAYOUT.addWidget(self.ADD_ICON)
@@ -94,7 +101,6 @@ class SearchBar(widget.QFrame):
         self.LAYOUT.addWidget(self.ADD_BUTTON)
         self.ADD_BUTTON.hide()
         self.ADD_BUTTON.clicked.connect(self.add_city)
-       
 
         self.SEARCH = widget.QFrame(self)
         self.SEARCH.setFixedSize(core.QSize(261,36))
@@ -110,7 +116,6 @@ class SearchBar(widget.QFrame):
         self.PIXMAP = gui.QPixmap("media/right_frame/Search.svg")
         self.IMG.setPixmap(self.PIXMAP)
         self.SEARCH_LAYOUT.addWidget(self.IMG)
-
         
         self.SEARCH_LINE = widget.QLineEdit(self.SEARCH)
         self.SEARCH_LINE.setStyleSheet("""
@@ -198,9 +203,7 @@ class SearchBar(widget.QFrame):
         
         self.SETTINGS_POPUP = widget.QFrame()
         self.SETTINGS_POPUP.setFixedSize(core.QSize(790, 688))
-        self.SETTINGS_POPUP.setWindowFlags(
-            core.Qt.WindowType.FramelessWindowHint
-        )
+        self.SETTINGS_POPUP.setWindowFlags(core.Qt.WindowType.FramelessWindowHint)
         self.SETTINGS_POPUP.setAttribute(core.Qt.WidgetAttribute.WA_TranslucentBackground)
         self.SETTINGS_POPUP.setStyleSheet("background-color: none; border-radius: 10px; border: none;")
         self.SETTINGS_POPUP.raise_()
@@ -225,7 +228,6 @@ class SearchBar(widget.QFrame):
             
         self.TITLE_LABEL.setStyleSheet("font-size:24px; font-weight:500")
         self.T_LAYOUT.addWidget(self.TITLE_LABEL)
-        
         
         self.CLOSE_BUTTON = widget.QPushButton()
         self.CLOSE_BUTTON.setIcon(gui.QIcon("media/search_bar/close.svg"))
@@ -273,8 +275,6 @@ class SearchBar(widget.QFrame):
         self.IMG_LIST.setStyleSheet("background-color: none; border-radius: 0px; font-size:16px; font-weight:400; border:0px; text-align: left; padding-left: 8px;")
         self.IMG_LIST.setFixedSize(core.QSize(158, 35))
 
-    
-
         self.LEFT_SETTINGS_LAYOUT.addWidget(self.CITY_SEARCH)
         self.LEFT_SETTINGS_LAYOUT.addWidget(self.RESOLUTION)
         self.LEFT_SETTINGS_LAYOUT.addWidget(self.LANGUAGE)
@@ -295,8 +295,6 @@ class SearchBar(widget.QFrame):
             self.CITY_SEARCH_LABEL = widget.QLabel("Пошук міста", self.CITY_SEARCH_FRAME)
         self.CITY_SEARCH_LABEL.setStyleSheet("background-color: none; color: white; font-size: 18px; font-weight: 400;")
         self.CITY_SEARCH_LAYOUT.addWidget(self.CITY_SEARCH_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
-        
-
 
         self.MAP_FRAME = widget.QFrame()
         self.MAP_FRAME.setFixedSize(core.QSize(544, 256))
@@ -317,10 +315,7 @@ class SearchBar(widget.QFrame):
         self.WEBMAP = folium.Map(location=(80, 60))
         data = io.BytesIO()
         self.WEBMAP.save(data, close_file=False)
-
         self.WEB_VIEW.setHtml(data.getvalue().decode())
-
-
 
         self.COUNTRY_LAYOUT = widget.QVBoxLayout(self.COUNTRY_FRAME)
         self.COUNTRY_LAYOUT.setContentsMargins(0, 0, 0, 0)
@@ -397,7 +392,6 @@ class SearchBar(widget.QFrame):
         """)
         self.COORDS_GROUP_LAYOUT.addWidget(self.COORDS_QLINEEDIT)
         
-        
         self.CITY_COMBOBOX.currentTextChanged.connect(self.update_coordinates_display)
         self.CITY_COMBOBOX.currentTextChanged.connect(self.update_city_map)
 
@@ -419,8 +413,6 @@ class SearchBar(widget.QFrame):
         """)
         self.SAVE_MAP_BUTTON.setFixedSize(core.QSize(105, 38))
         self.SAVE_MAP_BUTTON.clicked.connect(self.save_selected_city)
-        self.SAVE_MAP_BUTTON.clicked.connect(lambda: self.update_added_cities(city_name=self.CITY_COMBOBOX.currentText()))
-        #self.SAVE_MAP_BUTTON.clicked.connect(lambda: self.city_selected.emit(self.CITY_COMBOBOX.currentText(), self.COORDS_QLINEEDIT.text()))
         self.COUNTRY_LAYOUT.addWidget(self.SAVE_MAP_BUTTON, alignment=core.Qt.AlignmentFlag.AlignLeft)
         
         if lang == "en":
@@ -431,7 +423,6 @@ class SearchBar(widget.QFrame):
         self.ADDED_CITIES_LABEL.setStyleSheet("color:white; font-weight:400;font-size:18px;text-align: left;")
         self.CITY_SEARCH_LAYOUT.addWidget(self.ADDED_CITIES_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
 
-
         self.ADDED_CITIES_FRAME = widget.QFrame()
         self.ADDED_CITIES_FRAME.setStyleSheet("background-color: rgba(0, 0, 0, 0.2)")
         self.ADDED_CITIES_FRAME.setFixedSize(core.QSize(544,160))
@@ -440,30 +431,16 @@ class SearchBar(widget.QFrame):
         self.ADDED_CITIES_LAYOUT.setContentsMargins(16,16,16,16)
         self.ADDED_CITIES_LAYOUT.setSpacing(0)
         
-        cities = read_json(f"city_{lang}.json")
+        try:
+            cities = read_json(f"city_{lang}.json")
+        except:
+            cities = []
         
         self.CITIES_LIST = cities
-        
         self.added_city_frames = {}
         
         for city in self.CITIES_LIST:
-            frame = widget.QFrame()
-            frame.setStyleSheet("background-color: none;")
-            frame.setFixedSize(core.QSize(512,32))
-            self.ADDED_CITIES_LAYOUT.addWidget(frame)
-
-            row_layout = widget.QHBoxLayout(frame) 
-            label = widget.QLabel(city)
-
-            trash_btn = widget.QPushButton()
-            trash_btn.setFixedSize(core.QSize(16,16))
-            trash_btn.clicked.connect(lambda checked=False, c=city: self.delete_city(c))
-            QSvgWidget("media/search_bar/trash.svg", trash_btn)
-
-            row_layout.addWidget(label, alignment=core.Qt.AlignmentFlag.AlignLeft)
-            row_layout.addWidget(trash_btn, alignment=core.Qt.AlignmentFlag.AlignRight)
-
-            self.added_city_frames[city.lower()] = frame
+            self.update_added_cities(city)
             
         self.CITY_SEARCH_FRAME.hide()
 
@@ -485,7 +462,6 @@ class SearchBar(widget.QFrame):
         self.FRAME_CENTRAL_LAYOUT = widget.QVBoxLayout(self.FRAME_CENTRAL)
         self.FRAME_CENTRAL_LAYOUT.setContentsMargins(0,0,0,0)
         self.FRAME_CENTRAL_LAYOUT.setSpacing(24)
-
         
         self.RADIO_BUTTONS_FRAME = widget.QFrame(self.FRAME_CENTRAL)
         self.RADIO_BUTTONS_FRAME.setFixedSize(core.QSize(544, 122))
@@ -495,8 +471,6 @@ class SearchBar(widget.QFrame):
         self.FRAME_RADIOBUTTONS_LAYOUT.setContentsMargins(0,0,0,0)
         self.FRAME_RADIOBUTTONS_LAYOUT.setSpacing(8)
 
-        resolution = read_json("settings.json")
-        
         self.RADIO_1 = widget.QRadioButton("1200x800", self.RADIO_BUTTONS_FRAME)
         self.RADIO_2 = widget.QRadioButton("1440x1024", self.RADIO_BUTTONS_FRAME)
         self.RADIO_3 = widget.QRadioButton("1512x982", self.RADIO_BUTTONS_FRAME)
@@ -556,14 +530,12 @@ class SearchBar(widget.QFrame):
             self.LANGUAGE_LABEL = widget.QLabel("Mовa додатку", self.COMBOBOX_FRAME)
         
         self.LANGUAGE_LABEL.setStyleSheet("background-color: none; color: white; font-size: 14px; font-weight: 500;")
-
         self.LANGUAGE_CENTRAL_LAYOUT.addWidget(self.LANGUAGE_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
 
         if lang == "en":
             self.COMBOBOX_LANGUAGE = ComboBox(layout=self.LANGUAGE_CENTRAL_LAYOUT, items=["English", "Українська"])
         else:
             self.COMBOBOX_LANGUAGE = ComboBox(layout=self.LANGUAGE_CENTRAL_LAYOUT, items=["Українська", "English"])
-        
         
         self.BUTTON_FRAME = widget.QFrame(self.LANGUAGE_FRAME)
         self.BUTTON_FRAME.setFixedSize(core.QSize(544,38))
@@ -608,8 +580,6 @@ class SearchBar(widget.QFrame):
         self.IMG_LIST_LABEL.setStyleSheet("background-color: none; color: white; font-size: 18px; font-weight: 400;")
         self.IMG_LIST_LAYOUT.addWidget(self.IMG_LIST_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
         
-        
-        
         self.IMG_LIST_FRAME.hide()
 
         self.SETTINGS.clicked.connect(self.show_settings)
@@ -619,9 +589,6 @@ class SearchBar(widget.QFrame):
         self.LANGUAGE.clicked.connect(self.language_settings)
         self.IMG_LIST.clicked.connect(self.image_list)    
         self.COUNTRY_COMBOBOX.currentTextChanged.connect(self.update_country_map)
-        self.COUNTRY_COMBOBOX.currentTextChanged.connect(self.update_cities_by_country)
-        self.CITY_COMBOBOX.currentTextChanged.connect(self.update_city_map)
-        self.CITY_COMBOBOX.currentTextChanged.connect(self.update_coordinates_display)
         self.SAVE_LANGUAGE_BUTTON.clicked.connect(self.language_save_json)
 
     def clear_old_results(self):
@@ -630,7 +597,6 @@ class SearchBar(widget.QFrame):
             self.POPUP_LAYOUT.removeWidget(lbl)
             lbl.deleteLater()
         self.DYNAMIC_LABELS.clear()
-
         
         while self.POPUP_LAYOUT.count() > 1: 
             item = self.POPUP_LAYOUT.takeAt(1)
@@ -643,21 +609,46 @@ class SearchBar(widget.QFrame):
         
         if text.strip():
             self.CLEAR.show()
-            
             text_lower = text.strip().lower()
-            city_exists = text_lower in self.CITY_NAMES
+            
+            city_exists = (text_lower in self.CITY_NAMES) or (text_lower in self.UA_CITIES)
             
             if city_exists:
                 self.ADD_BUTTON.show()
             else:
                 self.ADD_BUTTON.hide()
             
+            found_cities = []
+            limit = 5
             
-            found_cities = find_cities_by_prefix(self.CITIES_DATA, text, limit=5)
+            for c in self.CITIES_DATA:
+                if len(found_cities) >= limit:
+                    break
+                    
+                if not isinstance(c, dict):
+                    continue
+                
+                name_en = c.get("name", "")
+                translations = c.get("translations")
+                name_ua = translations.get("uk", "") if isinstance(translations, dict) else ""
+                
+                if lang == "ua":
+                    
+                    if (name_ua and name_ua.lower().startswith(text_lower)) or name_en.lower().startswith(text_lower):
+                        
+                        display_name = name_ua if name_ua else name_en
+                        if display_name not in found_cities:
+                            found_cities.append(display_name)
+                else:
+                    
+                    if name_en.lower().startswith(text_lower):
+                        if name_en not in found_cities:
+                            found_cities.append(name_en)
+           
             
             if found_cities:
-                for city in found_cities:
-                    btn = widget.QPushButton(city, self.POPUP_FRAME)
+                for display_name in found_cities:
+                    btn = widget.QPushButton(display_name, self.POPUP_FRAME)
                     btn.setFixedHeight(36)
                     btn.setStyleSheet("""
                         QPushButton {
@@ -673,7 +664,8 @@ class SearchBar(widget.QFrame):
                             border-radius: 4px;
                         }
                     """)
-                    btn.clicked.connect(lambda checked, c=city: self._on_city_clicked(c))
+                   
+                    btn.clicked.connect(lambda checked, c=display_name: self._on_city_clicked(c))
                     
                     self.POPUP_LAYOUT.addWidget(btn)
                     self.DYNAMIC_LABELS.append(btn)
@@ -682,7 +674,6 @@ class SearchBar(widget.QFrame):
                     self.POPUP.show()
                 
                 self.POPUP_LAYOUT.activate()
-                
                 self.POPUP.resize(1, 1) 
                 self.POPUP.adjustSize()
                 
@@ -700,7 +691,6 @@ class SearchBar(widget.QFrame):
         self.ADD_BUTTON.show()
         
         self.POPUP.hide()
-        
         self.update_city_map(city_name)
         
         try:
@@ -715,10 +705,8 @@ class SearchBar(widget.QFrame):
         if event.type() == core.QEvent.Type.MouseButtonPress:
             if self.POPUP.isVisible():
                 global_pos = event.globalPosition().toPoint()
-                
                 if not self.SEARCH.geometry().contains(self.SEARCH.mapFromGlobal(global_pos)) and \
                    not self.POPUP.geometry().contains(self.POPUP.mapFromGlobal(global_pos)):
-                    
                     self.POPUP.hide()
                     
         return super().eventFilter(obj, event)
@@ -741,22 +729,30 @@ class SearchBar(widget.QFrame):
             return
 
         city_en = city_obj.get("name")
-        city_ua = city_obj.get("translations", {}).get("uk", city_en)
+        translations = city_obj.get("translations")
+        city_ua = translations.get("uk", city_en) if isinstance(translations, dict) else city_en
 
+        
         self.save_city_everywhere(city_en, city_ua)
+        
+      
+        target_name = city_ua if lang == "ua" else city_en
+        
+      
+        self.update_added_cities(target_name)
 
         self.clear_search_line()
-        self.city_added.emit(city_en)
+        
+        
+        self.city_added.emit(target_name)
         
     def show_settings(self):
         parent_frame = self.parent()
-        
         if parent_frame is None:
-            print("Ошибка: родительский фрейм не найден!")
+            print("Помилка: батьківський фрейм не знайдено!")
             return
         
         frame_center = parent_frame.rect().center() 
-
         global_center = parent_frame.mapToGlobal(frame_center)
 
         popup_width = self.SETTINGS_POPUP.width()
@@ -766,14 +762,12 @@ class SearchBar(widget.QFrame):
         final_y = global_center.y() - (popup_height // 2)
 
         self.SETTINGS_POPUP.move(final_x, final_y)
-        
         self.SETTINGS_POPUP.show()
         self.SETTINGS_POPUP.raise_()
         
     def close_settings(self):
         self.SETTINGS_POPUP.hide()
 
-        
     def clear(self):
         self.CITY_SEARCH.setStyleSheet("background-color: none; border-radius: 0px; font-size:16px; font-weight:400; border:none; text-align: left; padding-left: 8px;")
         self.RESOLUTION.setStyleSheet("background-color: none; border-radius: 0px; font-size:16px; font-weight:400; border:none; text-align: left; padding-left: 8px;")
@@ -812,81 +806,29 @@ class SearchBar(widget.QFrame):
         self.IMG_LIST_FRAME.show()
 
     def save_resolution(self):
-
         checked_button = self.RAIDO_BUTTONS_GROUP.checkedButton()
         if checked_button:
-
             res_str = checked_button.text()
             width, height = map(int, res_str.split("x"))
             
-  
             resolution = read_json("settings.json")
             resolution["currentResolution"] = [str(width), str(height)]
             create_json(resolution, "settings.json")
             
-
             self.resolution_changed.emit(width, height)
-            
             self.close_settings()
 
-    def update_cities_by_country(self, country_name):      
-        if lang == "en":
-            if not country_name or country_name == "Choose а country":
-            
-                self.CITY_COMBOBOX.clear()
-                self.CITY_COMBOBOX.addItem("Choose a city")
-                return
-            settings = read_json("settings.json")
-            cities_data = self.CITIES_DATA
-        
-            cities_for_country = [
-                city_obj.get('city', '').title() 
-                for city_obj in cities_data 
-                if city_obj.get('country', '').lower() == country_name.lower()
-            ]
-            
-            
-            self.CITY_COMBOBOX.clear()
-            
-            if cities_for_country:
-                self.CITY_COMBOBOX.addItem("Choose a city")
-                self.CITY_COMBOBOX.addItems(cities_for_country)  
-            else:
-                self.CITY_COMBOBOX.addItem("No cities")
-        else:
-            if not country_name or country_name == "Виберіть країну":
-            
-                self.CITY_COMBOBOX.clear()
-                self.CITY_COMBOBOX.addItem("Виберіть місто")
-                return
-        
-            cities_for_country = [
-                city_obj.get('city', '').title() 
-                for city_obj in cities_data 
-                if city_obj.get('country', '').lower() == country_name.lower()
-            ]
-            
-            
-            self.CITY_COMBOBOX.clear()
-            
-            if cities_for_country:
-                self.CITY_COMBOBOX.addItem("Виберіть місто")
-                self.CITY_COMBOBOX.addItems(cities_for_country)  
-            else:
-                self.CITY_COMBOBOX.addItem("Немає міст")
     def update_coordinates_display(self, city_name):
         if lang == "en":
             if not city_name or city_name in ["Choose a city", "No cities"]:
                 self.COORDS_QLINEEDIT.clear()
                 return
-            
         else:
             if not city_name or city_name in ["Виберіть місто", "Немає міст"]:
                 self.COORDS_QLINEEDIT.clear()
                 return
 
         coords = self.get_coords(city_name)
-
         if not coords:
             if lang == "en":
                 self.COORDS_QLINEEDIT.setText("Not found")
@@ -898,9 +840,10 @@ class SearchBar(widget.QFrame):
         self.COORDS_QLINEEDIT.setText(f"{lat}, {lon}")
 
     def save_selected_city(self):
+      
         city_name = self.CITY_COMBOBOX.currentText().strip()
     
-        if not city_name or city_name in ["Виберіть місто", "Немає міст"]:
+        if not city_name or city_name in ["Виберіть місто", "Немає міст", "Choose a city", "No cities"]:
             return
     
         city_obj = self.find_city(city_name)
@@ -908,46 +851,38 @@ class SearchBar(widget.QFrame):
             return
     
         city_en = city_obj.get("name")
-        city_ua = city_obj.get("translations", {}).get("uk", city_en)
+        translations = city_obj.get("translations")
+        city_ua = translations.get("uk", city_en) if isinstance(translations, dict) else city_en
     
         self.save_city_everywhere(city_en, city_ua)
-    
-        self.city_added.emit(city_en)
-
-    def update_city_map(self, city_name):
-
-        if lang == "en":
-            if not city_name or city_name in ["Choose a city", "No cities"]:
-                return
-        else:
-            if not city_name or city_name in ["Виберіть місто", "Немає міст"]:
-                return
-
-        coords = self.get_coords(city_name)
-
-        if not coords:
-            print("[MAP] City not found in JSON")
-            return
-
-        lat, lon = coords
-
-        self._render_map(lat, lon, city_name)
+        
+        target_name = city_ua if lang == "ua" else city_en
+        
+        
+        self.update_added_cities(target_name)
+        
+        self.city_added.emit(target_name)
 
     def delete_city(self, city_name):
         city_name = city_name.strip()
-        try:
-            cities = read_json("city.json")
-        except:
-            cities = []
-        cities = [c for c in cities if c.lower() != city_name.lower()]
-        create_json(cities, "city.json")
+        
+        for file_name in ["city.json", "city_en.json", "city_ua.json"]:
+            try:
+                cities = read_json(file_name)
+                cities = [c for c in cities if c.lower() != city_name.lower()]
+                create_json(cities, file_name)
+            except:
+                pass
 
         frame = self.added_city_frames.get(city_name.lower())
         if frame:
             self.ADDED_CITIES_LAYOUT.removeWidget(frame)
             frame.setParent(None)
             frame.deleteLater()
-            del self.added_city_frames[city_name.lower()]
+            try:
+                del self.added_city_frames[city_name.lower()]
+            except KeyError:
+                pass
 
         self.CITIES_LIST = [c for c in self.CITIES_LIST if c.lower() != city_name.lower()]
         self.city_removed.emit(city_name)
@@ -963,9 +898,11 @@ class SearchBar(widget.QFrame):
 
         row_layout = widget.QHBoxLayout(frame) 
         label = widget.QLabel(city_name)
+        label.setStyleSheet("color: white; font-size: 14px;")
 
         trash_btn = widget.QPushButton()
         trash_btn.setFixedSize(core.QSize(16,16))
+        trash_btn.setStyleSheet("QPushButton { background-color: none; border: none; }")
         trash_btn.clicked.connect(lambda checked=False, c=city_name: self.delete_city(c))
         QSvgWidget("media/search_bar/trash.svg", trash_btn)
 
@@ -980,7 +917,6 @@ class SearchBar(widget.QFrame):
             zoom_start=10,
             tiles="OpenStreetMap"
         )
-
         folium.Marker(
             [lat, lon],
             popup=label,
@@ -989,12 +925,9 @@ class SearchBar(widget.QFrame):
 
         data = io.BytesIO()
         self.WEBMAP.save(data, close_file=False)
-
         self.WEB_VIEW.setHtml(data.getvalue().decode())
-    
 
     def update_city_map(self, city_name):
-
         if lang == "en":
             if not city_name or city_name in ["Choose a city", "No cities"]:
                 return
@@ -1003,34 +936,27 @@ class SearchBar(widget.QFrame):
                 return
 
         coords = self.get_coords(city_name)
-
         if not coords:
             print("[MAP] City not found in JSON")
             return
 
         lat, lon = coords
-
         self._render_map(lat, lon, city_name)
 
     def update_country_map(self, country_name):
-
         cities = [
             c for c in self.CITIES_DATA
             if c.get("country_name", "").lower() == country_name.lower()
         ]
-
         if not cities:
             return
 
         city = cities[0]
-
         lat = float(city["latitude"])
         lon = float(city["longitude"])
-
         self._render_map(lat, lon, country_name)
 
     def update_cities_by_country(self, country_name):
-
         self.CITY_COMBOBOX.clear()
         if lang == "en":
             self.CITY_COMBOBOX.addItem("Choose a city")
@@ -1040,11 +966,14 @@ class SearchBar(widget.QFrame):
         if not country_name:
             return
 
-        cities = [
-            self.get_city_display_name(c)
-            for c in self.CITIES_DATA
-            if c.get("country_name", "").lower() == country_name.lower()
-        ]
+        cities = []
+        for c in self.CITIES_DATA:
+            if not isinstance(c, dict):
+                continue
+            if c.get("country_name", "").lower() == country_name.lower():
+                display_name = self.get_city_display_name(c)
+                if display_name:
+                    cities.append(display_name)
 
         if not cities:
             if lang == "en":
@@ -1055,19 +984,16 @@ class SearchBar(widget.QFrame):
 
         self.CITY_COMBOBOX.addItems(cities)
 
-
     def get_coords(self, city_name):
-            city = self.find_city(city_name)
-
-            if not city:
-                return None
-
-            return float(city["latitude"]), float(city["longitude"])
+        city = self.find_city(city_name)
+        if not city:
+            return None
+        return float(city["latitude"]), float(city["longitude"])
     
     def find_city(self, city_name):
-        settings = read_json("settings.json")
-        lang = settings.get("language", "en")
-    
+        if not city_name:
+            return None
+            
         for c in self.CITIES_DATA:
             if not isinstance(c, dict):
                 continue
@@ -1076,38 +1002,39 @@ class SearchBar(widget.QFrame):
                 if c.get("name", "").lower() == city_name.lower():
                     return c
             else:
-                uk = c.get("translations", {}).get("uk", "")
-                if uk.lower() == city_name.lower():
+            
+                translations = c.get("translations")
+                if isinstance(translations, dict):
+                    uk = translations.get("uk", "")
+                    if uk and uk.lower() == city_name.lower():
+                        return c
+              
+                if c.get("name", "").lower() == city_name.lower():
                     return c
-    
         return None
-    
     
     def language_save_json(self):
         current_language = self.COMBOBOX_LANGUAGE.currentText()
         print(current_language)
 
+        set_language = read_json("settings.json")
         if current_language == "Українська":
-            
-            set_language = read_json("settings.json")
             set_language["language"] = "ua"
-
         elif current_language == "English":
-            
-            set_language = read_json("settings.json")
             set_language["language"] = "en"
 
-        create_json(set_language,"settings.json")
-        
+        create_json(set_language, "settings.json")
         
     def get_city_display_name(self, city_obj):
-        settings = read_json("settings.json")
-        lang = settings.get("language", "en")
-    
+        if not isinstance(city_obj, dict):
+            return ""
         if lang == "en":
             return city_obj.get("name", "")
-    
-        return city_obj.get("translations", {}).get("uk", city_obj.get("name", ""))
+            
+        translations = city_obj.get("translations")
+        if isinstance(translations, dict):
+            return translations.get("uk", city_obj.get("name", ""))
+        return city_obj.get("name", "")
     
     def save_city_everywhere(self, city_en: str, city_ua: str):
         try:
@@ -1128,12 +1055,5 @@ class SearchBar(widget.QFrame):
     
         create_json(cities_en, "city_en.json")
         create_json(cities_ua, "city_ua.json")
-    
-    #def get_names(self, data):
-    #        return [item.get("name", "").lower() for item in data if item]
-    #def get_ua_names(self, data):
-    #    return [
-    #    item.get("translations", {}).get("uk", "").lower()
-    #    for item in data
-    #    if item
-    #]
+
+        
