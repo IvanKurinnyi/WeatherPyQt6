@@ -20,9 +20,9 @@ class SearchBar(widget.QFrame):
         super().__init__(*args, **kwargs)
 
         self.CITIES_DATA = read_json("cities.json")
+        self._blur_label = None
         self.DYNAMIC_LABELS = []
 
-        # Формуємо списки назв для швидкої валідації (в нижньому регістрі)
         self.CITY_NAMES = [
             c.get("name", "").lower() 
             for c in self.CITIES_DATA 
@@ -779,6 +779,41 @@ class SearchBar(widget.QFrame):
         final_x = global_center.x() - (popup_width // 2)
         final_y = global_center.y() - (popup_height // 2)
 
+        try:
+            parent_window = parent_frame.window()
+
+            popup_size = self.SETTINGS_POPUP.size()
+            global_top_left = core.QPoint(final_x, final_y)
+            local_top_left = parent_window.mapFromGlobal(global_top_left)
+
+            grab_rect = core.QRect(local_top_left, popup_size)
+
+            parent_rect = parent_window.rect()
+            grab_rect = grab_rect.intersected(parent_rect)
+
+            if not grab_rect.isEmpty():
+                grabbed = parent_window.grab(grab_rect)
+            else:
+                grabbed = parent_window.grab()
+
+            blurred = self.blur_pixmap(grabbed, radius=8)
+
+            if self._blur_label is None:
+                self._blur_label = widget.QLabel(self.SETTINGS_POPUP)
+                self._blur_label.setObjectName("_blurLabel")
+                self._blur_label.setScaledContents(True)
+
+            if blurred.size() != self.SETTINGS_POPUP.size():
+                blurred = blurred.scaled(self.SETTINGS_POPUP.size(), core.Qt.AspectRatioMode.IgnoreAspectRatio, core.Qt.TransformationMode.SmoothTransformation)
+
+            self._blur_label.setPixmap(blurred)
+            self._blur_label.setFixedSize(self.SETTINGS_POPUP.size())
+            self._blur_label.move(0, 0)
+            self._blur_label.lower()
+            self._blur_label.show()
+        except Exception as e:
+            print(f"Блюр выдал ошибку: {e}")
+
         self.SETTINGS_POPUP.move(final_x, final_y)
         self.SETTINGS_POPUP.show()
         self.SETTINGS_POPUP.raise_()
@@ -944,6 +979,34 @@ class SearchBar(widget.QFrame):
         data = io.BytesIO()
         self.WEBMAP.save(data, close_file=False)
         self.WEB_VIEW.setHtml(data.getvalue().decode())
+
+    def blur_pixmap(self, pixmap, radius=8):
+        try:
+            if pixmap is None or pixmap.isNull():
+                return pixmap
+
+            img = gui.QImage(pixmap.size(), gui.QImage.Format.Format_ARGB32)
+            img.fill(0)
+
+            painter = gui.QPainter(img)
+
+            scene = widget.QGraphicsScene()
+            item = scene.addPixmap(pixmap)
+
+            blur = widget.QGraphicsBlurEffect()
+            blur.setBlurRadius(radius)
+            try:
+                item.setGraphicsEffect(blur)
+            except Exception:
+                pass
+
+            scene.render(painter)
+            painter.end()
+
+            return gui.QPixmap.fromImage(img)
+        except Exception as e:
+            print(f"[BLUR] Error while blurring pixmap: {e}")
+            return pixmap
 
     def update_city_map(self, city_name):
         if lang == "en":

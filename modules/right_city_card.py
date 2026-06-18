@@ -124,14 +124,14 @@ class RightCityCard(widget.QFrame):
 
         if settings.get("currentResolution") == ["1200","800"]:
             self.CITY_LABEL.setStyleSheet("font-size: 44px; font-weight: bold; font-family: 'Roboto'; color: white; background: none;")
-            self.WEATHER_ICON.setPixmap(self.TOP_PIXMAP.scaled(140,140, core.Qt.AspectRatioMode.KeepAspectRatio, core.Qt.TransformationMode.SmoothTransformation))
+            self.WEATHER_ICON.setPixmap(self.TOP_PIXMAP.scaled(130,130, core.Qt.AspectRatioMode.KeepAspectRatio, core.Qt.TransformationMode.SmoothTransformation))
             self.DEGREE.setStyleSheet("font-size: 74px; color: white; font-family: 'Roboto';font-weight: 500; background: none;")
             self.STAT_LABEL.setStyleSheet("font-size: 24px; font-weight: 500; white; font-family: 'Roboto';background: none;")
             self.MINMAX_LABEL.setStyleSheet("font-size: 16px; color: white; font-weight: 500;font-family: 'Roboto'; background: none")
             
         elif settings.get("currentResolution") == ["1440","1024"]:
             self.CITY_LABEL.setStyleSheet("font-size: 60px; font-weight: bold; font-family: 'Roboto'; color: white; background: none;")
-            self.WEATHER_ICON.setPixmap(self.TOP_PIXMAP.scaled(190,190, core.Qt.AspectRatioMode.KeepAspectRatio, core.Qt.TransformationMode.SmoothTransformation))
+            self.WEATHER_ICON.setPixmap(self.TOP_PIXMAP.scaled(210,210, core.Qt.AspectRatioMode.KeepAspectRatio, core.Qt.TransformationMode.SmoothTransformation))
             self.DEGREE.setStyleSheet("font-size: 85px; color: white; font-family: 'Roboto';font-weight: 500; background: none;")
             self.STAT_LABEL.setStyleSheet("font-size: 34px; font-weight: 500; white; font-family: 'Roboto';background: none;")
             self.MINMAX_LABEL.setStyleSheet("font-size: 25px; color: white; font-weight: 500;font-family: 'Roboto'; background: none")
@@ -146,7 +146,7 @@ class RightCityCard(widget.QFrame):
 
         elif settings.get("currentResolution") == ["1728","1117"]:
             self.CITY_LABEL.setStyleSheet("font-size: 70px; font-weight: bold; font-family: 'Roboto'; color: white; background: none;")
-            self.WEATHER_ICON.setPixmap(self.TOP_PIXMAP.scaled(220,220, core.Qt.AspectRatioMode.KeepAspectRatio, core.Qt.TransformationMode.SmoothTransformation))
+            self.WEATHER_ICON.setPixmap(self.TOP_PIXMAP.scaled(240,240, core.Qt.AspectRatioMode.KeepAspectRatio, core.Qt.TransformationMode.SmoothTransformation))
             self.DEGREE.setStyleSheet("font-size: 95px; color: white; font-family: 'Roboto';font-weight: 500; background: none;")
             self.STAT_LABEL.setStyleSheet("font-size: 40px; font-weight: 500; white; font-family: 'Roboto';background: none;")
             self.MINMAX_LABEL.setStyleSheet("font-size: 30px; color: white; font-weight: 500;font-family: 'Roboto'; background: none")
