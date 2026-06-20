@@ -15,7 +15,8 @@ class SearchBar(widget.QFrame):
     city_added = core.pyqtSignal(str)
     city_removed = core.pyqtSignal(str) 
     resolution_changed = core.pyqtSignal(int, int)  
-    
+    language_changed = core.pyqtSignal(str)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -608,6 +609,7 @@ class SearchBar(widget.QFrame):
         self.IMG_LIST.clicked.connect(self.image_list)    
         self.COUNTRY_COMBOBOX.currentTextChanged.connect(self.update_country_map)
         self.SAVE_LANGUAGE_BUTTON.clicked.connect(self.language_save_json)
+        
 
     def clear_old_results(self):
         for lbl in self.DYNAMIC_LABELS:
@@ -1137,4 +1139,46 @@ class SearchBar(widget.QFrame):
         create_json(cities_en, "city_en.json")
         create_json(cities_ua, "city_ua.json")
 
+    def remove_city_everywhere(self, city_name: str):
+        try:
+            cities_en = read_json("city_en.json")
+        except:
+            cities_en = []
+
+        try:
+            cities_ua = read_json("city_ua.json")
+        except:
+            cities_ua = []
+
+        target_en = None
+        target_ua = None
+
+        for city_obj in self.CITIES_DATA:
+            target_en = None
+            target_ua = None
+
+        for city_obj in self.CITIES_DATA:
+            if not isinstance(city_obj, dict):
+                continue
+                
+            name_en = city_obj.get("name", "")
+            translations = city_obj.get("translations")
+            name_ua = translations.get("uk", "") if isinstance(translations, dict) else ""
+
+            if city_name.lower() in [name_en.lower(), name_ua.lower()]:
+                target_en = name_en
+                target_ua = name_ua
+                break
+
+        search_en = [target_en.lower()] if target_en else [city_name.lower()]
+        search_ua = [target_ua.lower()] if target_ua else [city_name.lower()]
+
+        new_cities_en = [c for c in cities_en if c.lower() not in search_en]
+        new_cities_ua = [c for c in cities_ua if c.lower() not in search_ua]
+
+       
+        create_json(new_cities_en, "city_en.json")
+        create_json(new_cities_ua, "city_ua.json")
         
+
+    

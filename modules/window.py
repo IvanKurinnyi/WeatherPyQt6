@@ -110,6 +110,8 @@ class MainWindow(widget.QMainWindow):
         self.SEARCH_BAR.resolution_changed.connect(self.update_window_resolution)
         self.SEARCH_BAR.city_added.connect(self.handle_city_added_dynamically)
         self.SEARCH_BAR.city_removed.connect(self.city_remove)
+        self.SEARCH_BAR.city_removed.connect(self.handle_city_removed_dynamically)
+        
         
         
         
@@ -233,8 +235,7 @@ class MainWindow(widget.QMainWindow):
 
         self.SCROLL_LAYOUT.insertWidget(insert_index, card)
         self.SCROLL_LAYOUT.insertWidget(insert_index + 1, card.BOTTOM_LINE)
-        
-        # Обновить видимость линий для всех карточек
+       
         self._update_all_lines_visibility()
         
         try:
@@ -306,6 +307,15 @@ class MainWindow(widget.QMainWindow):
         
         
         self._update_all_lines_visibility()
+
+    def handle_city_removed_dynamically(self, city_name):
+       
+        self.SEARCH_BAR.remove_city_everywhere(city_name)
+        
+        self.city_remove(city_name)
+
+    
+
 
 window = MainWindow()
         

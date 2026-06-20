@@ -172,3 +172,5 @@ class ForeCastGraph(widget.QFrame):
             self.COLUMN_LAYOUT.addWidget(col_container, stretch=1)
         
         self.update()
+
+   
