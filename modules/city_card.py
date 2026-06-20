@@ -220,6 +220,6 @@ class Card(widget.QFrame):
         else:
             self.BOTTOM_LINE.setStyleSheet("background-color:none")
 
-
+    
 
 

@@ -10,7 +10,7 @@ def create_json(data: dict, name_file:str):
     with open(file=f"instances/{name_file}", mode="w") as file:
         file.write(json.dumps(data, ensure_ascii=False, indent=4))
 
-API_KEY = os.getenv("API_KEY") 
+API_KEY = "d562486e64d8cd8b97cb68e1b245c4b4"#os.getenv("API_KEY") 
 
 
 settings = read_json("settings.json")
