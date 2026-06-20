@@ -7,9 +7,7 @@ import folium, io
 from .find_town import find_cities_by_prefix
 from .read_write_json import create_json, read_json
 from .combobox import ComboBox
-from .api_request import get_coordinates, lang
-import requests
-import csv
+from .api_request import get_coordinates, lang, api_request, API_KEY
 
 class SearchBar(widget.QFrame):
     city_selected = core.pyqtSignal(str, str)
@@ -881,18 +879,17 @@ class SearchBar(widget.QFrame):
         translations = city_obj.get("translations")
         city_ua = translations.get("uk", city_en) if isinstance(translations, dict) else city_en
 
-        
-        self.save_city_everywhere(city_en, city_ua)
-        
-      
-        target_name = city_ua if lang == "ua" else city_en
-        
-      
-        self.update_added_cities(target_name)
+        try:
+            check = api_request(city=city_en, API_KEY=API_KEY, lang=lang)
+        except Exception:
+            check = {}
+        if not isinstance(check, dict) or "main" not in check:
+            return
 
+        self.save_city_everywhere(city_en, city_ua)
+        target_name = city_ua if lang == "ua" else city_en
+        self.update_added_cities(target_name)
         self.clear_search_line()
-        
-        
         self.city_added.emit(target_name)
         
     def show_settings(self):

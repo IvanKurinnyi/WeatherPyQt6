@@ -86,7 +86,7 @@ class Card(widget.QFrame):
         
         self.UPPER_UPPER_LABEL.setStyleSheet("font-size:28px;font-family: 'Roboto';font-weight:500;color:white; margin-top: -5px")
         
-        self.UPPER_UPPER_LABEL.setText(city_name.capitalize())
+        self.UPPER_UPPER_LABEL.setText(city_name.title())
         
 
         self.UPPER_BOTTOM = widget.QFrame(self.UPPER_LEFT)
@@ -147,7 +147,7 @@ class Card(widget.QFrame):
         self.minute_update(city_name = city_name)
         self.MINUTE_TIMER = core.QTimer(self)
         self.MINUTE_TIMER.timeout.connect(lambda: self.minute_update(city_name = city_name))
-        self.MINUTE_TIMER.start(5000)
+        self.MINUTE_TIMER.start(60000)
         
         self.BOTTOM_LINE = widget.QFrame(scroll_frame)
         self.BOTTOM_LINE.setFixedSize(core.QSize(314, 1))
@@ -180,29 +180,30 @@ class Card(widget.QFrame):
         self.selected.emit()
 
     def update_weather(self, city_name):
-        city_request = api_request(city=city_name, API_KEY=API_KEY, lang=lang)
-    
-        temp = str(round(city_request["main"]["temp"]))
-        temp_max = str(city_request["main"]["temp_max"])
-        temp_min = str(city_request["main"]["temp_min"])
-        description:str = city_request["weather"][0]["description"]
-        offset:int = int(city_request["timezone"])
+        data = api_request(city=city_name, API_KEY=API_KEY, lang=lang)
+        if not isinstance(data, dict) or "main" not in data:
+            self.UPPER_RIGHT_LABEL.setText("--°")
+            self.BOTTOM_LEFT.setText("")
+            self.BOTTOM_RIGHT.setText("")
+            return
+
+        self._tz_offset = int(data.get("timezone", 0))
+        temp = str(round(data["main"]["temp"]))
+        temp_max = str(data["main"].get("temp_max", "--"))
+        temp_min = str(data["main"].get("temp_min", "--"))
+        description = data.get("weather", [{}])[0].get("description", "").capitalize()
+
         self.UPPER_RIGHT_LABEL.setText(temp + "°")
-        self.BOTTOM_LEFT.setText(description.capitalize())
+        self.BOTTOM_LEFT.setText(description)
         if lang == "en":
             self.BOTTOM_RIGHT.setText(f"Max.: {temp_max}°, min.: {temp_min}°")
-        else: 
+        else:
             self.BOTTOM_RIGHT.setText(f"Макс.: {temp_max}°, мін.: {temp_min}°")
-        self.TIME_LABEL.setText(find_time(offset))
-        print("Погода оновлена!!!!")
-    
+        self.TIME_LABEL.setText(find_time(self._tz_offset))
+
     def minute_update(self, city_name):
-        now = datetime.now()
-        minutes = now.minute
-        if self.TIME_LABEL.text()[3:] != minutes:
-            city_request = api_request(city=city_name, API_KEY=API_KEY, lang=lang)
-            offset:int = int(city_request["timezone"])
-            self.TIME_LABEL.setText(find_time(offset))
+        if hasattr(self, "_tz_offset"):
+            self.TIME_LABEL.setText(find_time(self._tz_offset))
             
     def city_request(self):
         try:

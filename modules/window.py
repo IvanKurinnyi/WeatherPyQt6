@@ -116,7 +116,6 @@ class MainWindow(widget.QMainWindow):
         
         
         self.RIGHT_INFO_FRAME = widget.QFrame(self.RIGHT_CARDS_FRAME)
-        # self.RIGHT_INFO_FRAME.setMinimumSize(core.QSize(788, 303))
         self.RIGHT_CARDS_LAYOUT.addWidget(self.RIGHT_INFO_FRAME)
 
 
@@ -262,9 +261,28 @@ class MainWindow(widget.QMainWindow):
 
     def city_request(self):
         try:
-            response = requests.get("https://ipinfo.io/json", timeout=5)
-            data_dict = response.json()
-            return data_dict.get("city", "Dnipro")
+            data = requests.get("https://ipinfo.io/json", timeout=5).json()
+            city = data.get("city", "Dnipro").strip()
+            if lang == "ua":
+                try:
+                    cities = read_json("cities.json")
+                    target = city.casefold()
+                    if isinstance(cities, list):
+                        for item in cities:
+                            if not isinstance(item, dict):
+                                continue
+                            name = (item.get("name") or "").strip()
+                            native = (item.get("native") or "").strip()
+                            if name.casefold() == target or native.casefold() == target:
+                                trans = item.get("translations") or {}
+                                if isinstance(trans, dict):
+                                    uk = trans.get("uk") or trans.get("ua")
+                                    if uk:
+                                        return uk
+                                return name or city
+                except Exception:
+                    pass
+            return " ".join(part.capitalize() for part in city.split())
         except Exception:
             return "Dnipro"
 
