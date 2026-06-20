@@ -2,6 +2,7 @@ import requests
 import os
 import json
 
+
 def read_json(name_file: str) -> dict:
     with open(file=f"instances/{name_file}", mode="r", encoding='utf-8', errors='replace') as file:
         return json.load(file)

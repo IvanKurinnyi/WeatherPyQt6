@@ -9,6 +9,7 @@ from .read_write_json import create_json, read_json
 from .combobox import ComboBox
 from .api_request import get_coordinates, lang
 import requests
+import csv
 
 class SearchBar(widget.QFrame):
     city_selected = core.pyqtSignal(str, str)
@@ -209,7 +210,7 @@ class SearchBar(widget.QFrame):
         self.SETTINGS_POPUP.setStyleSheet("background-color: none; border-radius: 10px; border: none;")
         self.SETTINGS_POPUP.raise_()
         self.SETTINGS_POPUP_FRAME = widget.QFrame(self.SETTINGS_POPUP)
-        self.SETTINGS_POPUP_FRAME.setStyleSheet("background-color: rgba(0, 0, 0, 0.6); border-radius: 10px; border: none;")
+        self.SETTINGS_POPUP_FRAME.setStyleSheet("background-color: rgba(0, 0, 0, 0.8); border-radius: 10px; border: none;")
         
         self.SETTINGS_POPUP_LAYOUT = widget.QVBoxLayout(self.SETTINGS_POPUP_FRAME)
         self.SETTINGS_POPUP_LAYOUT.setContentsMargins(24,24,24,24)
@@ -329,7 +330,31 @@ class SearchBar(widget.QFrame):
         self.COUNTRY_LAYOUT.addWidget(self.COUNTRY_GROUP_FRAME)
 
         countrys_json = read_json("countries.json")
-        countries = [country["name"] for country in countrys_json["data"]]
+        settings = read_json("settings.json")
+
+        # countries.json теперь хранит список стран с готовыми полями:
+        # id, name_en, name_ua, iso2, latitude, longitude.
+        # Строим список для комбобокса и словарь "отображаемое имя -> id",
+        # чтобы потом находить города по country_id, а не по сравнению строк.
+        self.COUNTRY_NAME_TO_ID = {}
+        countries = []
+
+        for country in countrys_json:
+            if not isinstance(country, dict):
+                continue
+
+            if settings["language"] == "ua":
+                display_name = country.get("name_ua") or country.get("name_en", "")
+            else:
+                display_name = country.get("name_en", "")
+
+            if not display_name:
+                continue
+
+            countries.append(display_name)
+            self.COUNTRY_NAME_TO_ID[display_name] = country.get("id")
+
+
 
         if lang == "en":
             self.COUNTRY_LABEL = widget.QLabel("Country")
@@ -590,14 +615,118 @@ class SearchBar(widget.QFrame):
         self.IMG_LIST_FRAME = widget.QFrame(self.RIGHT_FRAME)
         self.IMG_LIST_LAYOUT = widget.QVBoxLayout(self.IMG_LIST_FRAME)
         self.IMG_LIST_LAYOUT.setContentsMargins(0,0,0,0)
+        self.IMG_LIST_LAYOUT.setSpacing(24)
+        
+        
+        
+        self.ADD_STYLE_BUTTON = widget.QPushButton()
+        self.ADD_STYLE_BUTTON.setFixedSize(core.QSize(97, 36))
+        self.ADD_STYLE_BUTTON.setStyleSheet("""
+            QPushButton {
+                background-color: rgba(0, 0, 0, 0.2); 
+                border-radius: 4px;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 255, 255, 0.1);
+            }
+        """)
+        
+        self.STYLE_BUTTON_LAYOUT = widget.QHBoxLayout(self.ADD_STYLE_BUTTON)
+        self.STYLE_BUTTON_LAYOUT.setContentsMargins(10, 0, 10, 0)
+        self.STYLE_BUTTON_LAYOUT.setSpacing(6)
+        self.STYLE_BUTTON_LAYOUT.setAlignment(core.Qt.AlignmentFlag.AlignCenter)
         
         if lang == "en":
             self.IMG_LIST_LABEL = widget.QLabel("List of the images", self.IMG_LIST_FRAME)
         else:
-            self.IMG_LIST_LABEL = widget.QLabel("Список зображень", self.IMG_LIST_FRAME)
+            self.IMG_LIST_LABEL = widget.QLabel("Списки зображень", self.IMG_LIST_FRAME)
             
         self.IMG_LIST_LABEL.setStyleSheet("background-color: none; color: white; font-size: 18px; font-weight: 400;")
         self.IMG_LIST_LAYOUT.addWidget(self.IMG_LIST_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
+        
+        self.ADD_ICON_BUTTON = QSvgWidget("media/search_bar/plus.svg", self.ADD_STYLE_BUTTON)
+        self.ADD_ICON_BUTTON.setFixedSize(core.QSize(16, 16))
+        
+        if lang == "en":
+            self.ADD_TEXT_BUTTON = widget.QLabel("Add", self.ADD_STYLE_BUTTON)
+        else: 
+            self.ADD_TEXT_BUTTON = widget.QLabel("Додати", self.ADD_STYLE_BUTTON)
+        self.ADD_TEXT_BUTTON.setStyleSheet("color: white; font-size: 14px; font-weight: 500; background: none;")
+        
+        self.STYLE_BUTTON_LAYOUT.addWidget(self.ADD_ICON_BUTTON)
+        self.STYLE_BUTTON_LAYOUT.addWidget(self.ADD_TEXT_BUTTON)
+        self.IMG_LIST_LAYOUT.addWidget(self.ADD_STYLE_BUTTON)
+        # self.ADD_STYLE_BUTTON.clicked.connect(self.add_styles)
+            
+            
+        self.STYLES_FRAME = widget.QFrame()  
+        self.STYLES_FRAME.setFixedSize(core.QSize(490,282))
+        self.STYLES_FRAME_LAYOUT = widget.QVBoxLayout(self.STYLES_FRAME)
+        self.STYLES_FRAME_LAYOUT.setContentsMargins(0,0,0,0)
+        self.STYLE_BUTTON_LAYOUT.setSpacing(10)
+        
+        ### сделать json с путями папок изображений
+        all_images = read_json("img_list.json")
+        
+        for i in all_images:
+            style_list = widget.QFrame(self.STYLES_FRAME)
+            style_list.setFixedSize(core.QSize(490,136))
+            style_list.setStyleSheet("background-color: none; border-radius: 4px")
+            style_list_layout = widget.QVBoxLayout(style_list)
+            style_list_layout.setContentsMargins(16,16,16,16)
+            style_list_layout.setSpacing(16)
+            
+            if lang == "en":
+                number_img = widget.QLabel(f"Images list №{i}", style_list)
+            else:
+                number_img = widget.QLabel(f"Cписок зображень №{i}", style_list)
+            number_img.setFixedSize(core.QSize(300,14))
+            number_img.setStyleSheet("font-weight:500; font-size:14px; background-color: none")
+            style_list_layout.addWidget(number_img)
+            
+            style_img_frame = widget.QFrame(style_list)
+            style_img_frame.setStyleSheet("background-color: none")
+            style_img_frame.setFixedSize(core.QSize(458, 74))
+            style_list_layout.addWidget(style_img_frame)
+            
+            style_img_layout = widget.QHBoxLayout(style_img_frame)
+            style_img_layout.setContentsMargins(0, 0, 0, 0)
+            style_img_layout.setSpacing(16)
+            
+            for img in range(5):
+                img_frame = widget.QFrame()
+                img_frame.setFixedSize(core.QSize(74,74))
+                img_frame.setStyleSheet("background-color: rgba(255, 255, 255, 0.2); border-radius: 10px")
+                style_img_layout.addWidget(img_frame, alignment=core.Qt.AlignmentFlag.AlignCenter)
+            
+            
+            self.STYLES_FRAME_LAYOUT.addWidget(style_list)
+            
+        self.IMG_LIST_LAYOUT.addWidget(self.STYLES_FRAME)   
+        
+        
+        
+        if lang == "en":
+            self.SAVE_STYLE_BUTTON = widget.QPushButton("Save", self.COUNTRY_FRAME)
+        else:
+            self.SAVE_STYLE_BUTTON = widget.QPushButton("Зберегти", self.COUNTRY_FRAME)
+            
+        self.SAVE_STYLE_BUTTON.setStyleSheet("""
+            QPushButton {
+                background-color: rgba(0, 0, 0, 0.2); 
+                border-radius: 4px;
+                border: none;
+                padding: 6px 12px;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 255, 255, 0.1);
+            }
+        """)
+        
+        self.SAVE_STYLE_BUTTON.setFixedSize(core.QSize(105, 38))
+        self.SAVE_STYLE_BUTTON.clicked.connect(self.save_selected_city)
+        self.IMG_LIST_LAYOUT.addWidget(self.SAVE_STYLE_BUTTON)
         
         self.IMG_LIST_FRAME.hide()
 
@@ -1027,9 +1156,13 @@ class SearchBar(widget.QFrame):
         self._render_map(lat, lon, city_name)
 
     def update_country_map(self, country_name):
+        country_id = self.COUNTRY_NAME_TO_ID.get(country_name)
+        if country_id is None:
+            return
+
         cities = [
             c for c in self.CITIES_DATA
-            if c.get("country_name", "").lower() == country_name.lower()
+            if isinstance(c, dict) and c.get("country_id") == country_id
         ]
         if not cities:
             return
@@ -1041,6 +1174,7 @@ class SearchBar(widget.QFrame):
 
     def update_cities_by_country(self, country_name):
         self.CITY_COMBOBOX.clear()
+
         if lang == "en":
             self.CITY_COMBOBOX.addItem("Choose a city")
         else:
@@ -1049,20 +1183,28 @@ class SearchBar(widget.QFrame):
         if not country_name:
             return
 
+        country_id = self.COUNTRY_NAME_TO_ID.get(country_name)
+
         cities = []
-        for c in self.CITIES_DATA:
-            if not isinstance(c, dict):
-                continue
-            if c.get("country_name", "").lower() == country_name.lower():
-                display_name = self.get_city_display_name(c)
-                if display_name:
-                    cities.append(display_name)
+
+        if country_id is not None:
+            for c in self.CITIES_DATA:
+                if not isinstance(c, dict):
+                    continue
+
+                if c.get("country_id") == country_id:
+                    display_name = self.get_city_display_name(c)
+
+                    if display_name:
+                        cities.append(display_name)
 
         if not cities:
+
             if lang == "en":
                 self.CITY_COMBOBOX.addItem("No cities")
             else:
                 self.CITY_COMBOBOX.addItem("Немає міст")
+
             return
 
         self.CITY_COMBOBOX.addItems(cities)
@@ -1179,6 +1321,3 @@ class SearchBar(widget.QFrame):
        
         create_json(new_cities_en, "city_en.json")
         create_json(new_cities_ua, "city_ua.json")
-        
-
-    
