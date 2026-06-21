@@ -2,6 +2,8 @@ import requests
 import os
 import json
 
+from .translations import LANG, api_lang_code
+
 
 def read_json(name_file: str) -> dict:
     with open(file=f"instances/{name_file}", mode="r", encoding='utf-8', errors='replace') as file:
@@ -49,11 +51,51 @@ def _build_city_map(cities):
 
 CITY_MAP = _build_city_map(CITIES)
 
-API_KEY = os.getenv("API_KEY") 
+API_KEY = os.getenv("API_KEY")
 
 settings = read_json("settings.json")
 
-lang = settings["language"]
+
+
+
+def get_city_display_name(city_obj: dict) -> str:
+    
+    if not isinstance(city_obj, dict):
+        return ""
+    if LANG.current == "en":
+        return city_obj.get("name", "")
+    translations = city_obj.get("translations")
+    if isinstance(translations, dict):
+        uk = translations.get("uk")
+        if uk:
+            return uk
+    return city_obj.get("name", "")
+
+
+def find_city_obj(city_name: str):
+    if not city_name or not CITIES:
+        return None
+    target = city_name.strip().casefold()
+    for c in CITIES:
+        if not isinstance(c, dict):
+            continue
+        name = (c.get("name") or "").strip().casefold()
+        if name == target:
+            return c
+        trans = c.get("translations") or {}
+        if isinstance(trans, dict):
+            uk = (trans.get("uk") or "").strip().casefold()
+            if uk == target:
+                return c
+    return None
+
+
+def display_name_for_any(city_name: str) -> str:
+    city_obj = find_city_obj(city_name)
+    if city_obj:
+        return get_city_display_name(city_obj)
+    return city_name
+
 
 def get_api_city_name(display_city: str) -> str:
     if not display_city:
@@ -62,15 +104,12 @@ def get_api_city_name(display_city: str) -> str:
     return CITY_MAP.get(key, display_city)
 
 def _map_lang_for_api(lang_code: str) -> str:
-    if not lang_code:
-        return "en"
-    if lang_code == "ua":
-        return "uk"
-    return lang_code
+    return api_lang_code(lang_code)
 
-def api_request(city: str, API_KEY: str, lang: str):
+def api_request(city: str, API_KEY: str, lang: str = None):
     try:
-        api_lang = _map_lang_for_api(lang)
+        effective_lang = lang if lang is not None else LANG.current
+        api_lang = _map_lang_for_api(effective_lang)
         city_for_api = get_api_city_name(city)
         url = f"https://api.openweathermap.org/data/2.5/weather?q={city_for_api}&appid={API_KEY}&units=metric&lang={api_lang}"
         resp = requests.get(url, timeout=5)
@@ -93,8 +132,9 @@ def api_request(city: str, API_KEY: str, lang: str):
     except Exception:
         return {}
 
-def forecast_request(city: str, API_KEY: str, lang: str):
-    api_lang = _map_lang_for_api(lang)
+def forecast_request(city: str, API_KEY: str, lang: str = None):
+    effective_lang = lang if lang is not None else LANG.current
+    api_lang = _map_lang_for_api(effective_lang)
     city_for_api = get_api_city_name(city)
     url = f"https://api.openweathermap.org/data/2.5/forecast?q={city_for_api}&appid={API_KEY}&units=metric&lang={api_lang}"
     resp = requests.get(url)
@@ -111,14 +151,6 @@ def forecast_request(city: str, API_KEY: str, lang: str):
         resp2 = requests.get(url2)
         return resp2.json()
     return data
-
-
-#def country_request():
-#    url = "https://countriesnow.space/api/v0.1/countries/positions"
-#    response = requests.get(url)
-#    response_dict = response.json()
-#    return response_dict
-#create_json(country_request(), "countries.json")
 
 
 def get_coordinates(city:str):

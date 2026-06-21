@@ -3,15 +3,16 @@ import PyQt6.QtCore as core
 from PyQt6.QtCore import pyqtSignal
 import PyQt6.QtGui as gui
 from PyQt6.QtSvgWidgets import QSvgWidget
-from .api_request import api_request, API_KEY, lang
+from .api_request import api_request, API_KEY, LANG, display_name_for_any
 from .time import find_time
+from .translations import t
 from datetime import datetime
 import requests
 
 
 class Card(widget.QFrame):
     selected = pyqtSignal()
-    
+
     def __init__(self, city_name:str,scroll_frame,*args, **kwargs):
         super().__init__(*args, **kwargs)
         self.WIDTH = 330
@@ -23,6 +24,8 @@ class Card(widget.QFrame):
         self.DESELECTED_STYLE = "background-color: rgba(0,0,0,0); border-radius: 8px"
 
         self.setMinimumSize(core.QSize(self.WIDTH, self.HEIGHT))
+
+        
         self.city_name = city_name
 
         self.CARD_LAYOUT = widget.QHBoxLayout(self)
@@ -34,10 +37,10 @@ class Card(widget.QFrame):
         self.INFO_FRAME.setContentsMargins(0,0,0,0)
         self.INFO_FRAME.setLayout(self.INFO_LAYOUT)
         self.CARD_LAYOUT.addWidget(self.INFO_FRAME)
-    
+
         self.INFO_FRAME.setStyleSheet(self.DESELECTED_STYLE)
 
-    
+
         self.UPPER_INFO = widget.QFrame(self.INFO_FRAME)
         self.UPPER_INFO.setFixedSize(core.QSize(314,48))
         self.UPPER_LAYOUT = widget.QHBoxLayout(self.UPPER_INFO)
@@ -52,8 +55,8 @@ class Card(widget.QFrame):
         self.UPPER_LEFT_LAYOUT = widget.QVBoxLayout(self.UPPER_LEFT)
         self.UPPER_LEFT_LAYOUT.setContentsMargins(0,0,0,0)
         self.UPPER_LEFT.setLayout(self.UPPER_LEFT_LAYOUT)
-        
-        
+
+
         self.UPPER_UPPER = widget.QFrame(self.UPPER_LEFT)
         self.UPPER_UPPER.setFixedSize(core.QSize(247,26))
         self.UPPER_LEFT_LAYOUT.addWidget(self.UPPER_UPPER)
@@ -75,32 +78,33 @@ class Card(widget.QFrame):
             self.POSITION_ICON.setFixedSize(16, 16)
             self.ICON_LAYOUT.addWidget(self.POSITION_ICON, alignment=core.Qt.AlignmentFlag.AlignLeft)
             self.POSITION_PICTURE = gui.QPixmap("media/city_card/navigation.svg")
-            
-            
+
+
         self.CITY_NAME_FRAME = widget.QFrame(self.UPPER_UPPER)
         self.UPPER_UPPER_LAYOUT.addWidget(self.CITY_NAME_FRAME)
 
         self.UPPER_UPPER_LABEL = widget.QLabel(self.CITY_NAME_FRAME)
         self.UPPER_UPPER_LABEL.setContentsMargins(0,0,0,0)
         self.UPPER_UPPER_LABEL.setFixedSize(core.QSize(240,29))
-        
+
         self.UPPER_UPPER_LABEL.setStyleSheet("font-size:28px;font-family: 'Roboto';font-weight:500;color:white; margin-top: -5px")
+
         
-        self.UPPER_UPPER_LABEL.setText(city_name.title())
-        
+        self.UPPER_UPPER_LABEL.setText(display_name_for_any(city_name).title())
+
 
         self.UPPER_BOTTOM = widget.QFrame(self.UPPER_LEFT)
         self.UPPER_BOTTOM.setFixedSize(core.QSize(247,21))
         self.UPPER_BOTTOM_LAYOUT = widget.QHBoxLayout(self.UPPER_BOTTOM)
         self.UPPER_BOTTOM_LAYOUT.setContentsMargins(0,0,0,0)
         self.UPPER_BOTTOM.setLayout(self.UPPER_BOTTOM_LAYOUT)
-        
+
         self.TIME_LABEL = widget.QLabel(self.UPPER_BOTTOM)
         self.TIME_LABEL.setContentsMargins(0,0,0,0)
         self.TIME_LABEL.setStyleSheet("font-size:14px;font-family: 'Roboto';font-weight:500;color:white")
         self.TIME_LABEL.setText("")
         self.UPPER_BOTTOM_LAYOUT.addWidget(self.TIME_LABEL)
-        
+
         self.UPPER_LEFT_LAYOUT.addWidget(self.UPPER_BOTTOM)
 
 
@@ -124,7 +128,7 @@ class Card(widget.QFrame):
 
         self.BOTTOM_LAYOUT = widget.QHBoxLayout(self.BOTTOM_INFO)
         self.BOTTOM_LAYOUT.setContentsMargins(0,0,0,0)
-        
+
         self.BOTTOM_LEFT = widget.QLabel(self.BOTTOM_INFO)
         self.BOTTOM_LEFT.setFixedSize(core.QSize(150,14))
         self.BOTTOM_LEFT.setStyleSheet("font-size:12px;font-family: 'Roboto';font-weight:500;color:white;")
@@ -148,15 +152,15 @@ class Card(widget.QFrame):
         self.MINUTE_TIMER = core.QTimer(self)
         self.MINUTE_TIMER.timeout.connect(lambda: self.minute_update(city_name = city_name))
         self.MINUTE_TIMER.start(60000)
-        
+
         self.BOTTOM_LINE = widget.QFrame(scroll_frame)
         self.BOTTOM_LINE.setFixedSize(core.QSize(314, 1))
         self.BOTTOM_LINE.setStyleSheet("background-color: rgba(255,255,255,0.2); margin-top: -20px")
 
         self.update_style()
+
         
-    #def line(self, scroll_layout):
-    #    scroll_layout.addWidget(self.BOTTOM_LINE, alignment = core.Qt.AlignmentFlag.AlignCenter)
+        LANG.subscribe(self.retranslate_ui)
 
     def update_style(self):
         if self.IS_CHOSEN:
@@ -169,18 +173,18 @@ class Card(widget.QFrame):
             self.UPPER_INFO.setStyleSheet(self.DESELECTED_STYLE)
             self.BOTTOM_INFO.setStyleSheet(self.DESELECTED_STYLE)
             self.BOTTOM_LINE.setStyleSheet("background-color: rgba(255,255,255,0.2)")
-    
+
     def deselect(self):
         self.IS_CHOSEN = False
         self.update_style()
-        
+
     def mousePressEvent(self, event):
         self.IS_CHOSEN = True
         self.update_style()
         self.selected.emit()
 
     def update_weather(self, city_name):
-        data = api_request(city=city_name, API_KEY=API_KEY, lang=lang)
+        data = api_request(city=city_name, API_KEY=API_KEY)
         if not isinstance(data, dict) or "main" not in data:
             self.UPPER_RIGHT_LABEL.setText("--°")
             self.BOTTOM_LEFT.setText("")
@@ -195,16 +199,22 @@ class Card(widget.QFrame):
 
         self.UPPER_RIGHT_LABEL.setText(temp + "°")
         self.BOTTOM_LEFT.setText(description)
-        if lang == "en":
-            self.BOTTOM_RIGHT.setText(f"Max.: {temp_max}°, min.: {temp_min}°")
-        else:
-            self.BOTTOM_RIGHT.setText(f"Макс.: {temp_max}°, мін.: {temp_min}°")
+        self.BOTTOM_RIGHT.setText(t("max_min").format(max=temp_max, min=temp_min))
         self.TIME_LABEL.setText(find_time(self._tz_offset))
 
     def minute_update(self, city_name):
         if hasattr(self, "_tz_offset"):
             self.TIME_LABEL.setText(find_time(self._tz_offset))
-            
+
+    def retranslate_ui(self):
+        
+        self.UPPER_UPPER_LABEL.setText(display_name_for_any(self.city_name).title())
+        self.update_weather(city_name=self.city_name)
+
+    def closeEvent(self, event):
+        LANG.unsubscribe(self.retranslate_ui)
+        super().closeEvent(event)
+
     def city_request(self):
         try:
             response = requests.get("https://ipinfo.io/json", timeout=5)
@@ -215,12 +225,8 @@ class Card(widget.QFrame):
 
 
     def update_line_visibility(self, should_show):
-       
+
         if should_show:
             self.BOTTOM_LINE.setStyleSheet("background-color: rgba(255,255,255,0.2)")
         else:
             self.BOTTOM_LINE.setStyleSheet("background-color:none")
-
-    
-
-

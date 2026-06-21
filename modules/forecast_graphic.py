@@ -1,15 +1,19 @@
 import PyQt6.QtWidgets as widget
 import PyQt6.QtCore as core
 import PyQt6.QtGui as gui
-from .api_request import forecast_request, API_KEY, lang
+from .api_request import forecast_request, API_KEY, LANG
+from .translations import t
 
 class ForeCastGraph(widget.QFrame):
     def __init__(self, city_name, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        
+
         self.HEIGHT = 197
         self.setFixedHeight(self.HEIGHT)
+
         
+        self._current_city = city_name
+
         self.LAYOUT = widget.QVBoxLayout(self)
         self.LAYOUT.setContentsMargins(16, 16, 16, 16)
         self.LAYOUT.setSpacing(16)
@@ -22,10 +26,7 @@ class ForeCastGraph(widget.QFrame):
         self.TOP_LAYOUT.setSpacing(8)
         self.LAYOUT.addWidget(self.TOP_FRAME)
 
-        if lang == "en":
-            self.TOP_TEXT = widget.QLabel("Forecast for the near future")
-        else:
-            self.TOP_TEXT = widget.QLabel("Прогноз на найближчий час")
+        self.TOP_TEXT = widget.QLabel(t("forecast_near_future"))
         self.TOP_TEXT.setStyleSheet("font-size:16px; color:white")
         self.TOP_LAYOUT.addWidget(self.TOP_TEXT)
 
@@ -46,7 +47,7 @@ class ForeCastGraph(widget.QFrame):
         self.ICON_FORECAST.setFixedHeight(24)
         self.ICON_LAYOUT = widget.QHBoxLayout(self.ICON_FORECAST)
         self.ICON_LAYOUT.setContentsMargins(0, 0, 0, 0)
-        self.ICON_LAYOUT.setSpacing(6) 
+        self.ICON_LAYOUT.setSpacing(6)
         self.DOWN_LAYOUT.addWidget(self.ICON_FORECAST)
 
         self.ICON_BARS_FRAME = widget.QFrame()
@@ -71,7 +72,7 @@ class ForeCastGraph(widget.QFrame):
         self.COLUMN_LAYOUT.setContentsMargins(0, 0, 0, 0)
         self.COLUMN_LAYOUT.setSpacing(0)
         self.GRAPHIC_LAYOUT.addWidget(self.GRAPHIC_FRAME)
-        
+
         self.NUMBERS_FRAME = widget.QFrame()
         self.NUMBERS_FRAME.setFixedHeight(95)
         self.NUMBERS_FRAME.setFixedWidth(22)
@@ -90,6 +91,9 @@ class ForeCastGraph(widget.QFrame):
         self.interpolated_data = []
         self.update_forecast(city_name)
 
+        
+        LANG.subscribe(self.retranslate_ui)
+
     def clear_layout(self, layout):
         while layout.count():
             item = layout.takeAt(0)
@@ -100,8 +104,9 @@ class ForeCastGraph(widget.QFrame):
                 self.clear_layout(item.layout())
 
     def update_forecast(self, city_name):
+        self._current_city = city_name
         try:
-            api_data = forecast_request(city=city_name, API_KEY=API_KEY, lang=lang)
+            api_data = forecast_request(city=city_name, API_KEY=API_KEY)
             raw_data = api_data["list"][:16]
         except Exception as e:
             print(f"Помилка оновлення графіка: {e}")
@@ -121,6 +126,14 @@ class ForeCastGraph(widget.QFrame):
 
         self.draw_graph()
 
+    def retranslate_ui(self):
+        
+        self.TOP_TEXT.setText(t("forecast_near_future"))
+
+    def closeEvent(self, event):
+        LANG.unsubscribe(self.retranslate_ui)
+        super().closeEvent(event)
+
     def draw_graph(self):
         self.clear_layout(self.ICON_BARS_LAYOUT)
         self.clear_layout(self.COLUMN_LAYOUT)
@@ -128,7 +141,7 @@ class ForeCastGraph(widget.QFrame):
         min_temp = -5
         temp_range = 30
         max_height = 95
-        
+
         if not self.interpolated_data:
             return
 
@@ -136,41 +149,39 @@ class ForeCastGraph(widget.QFrame):
             icon_container = widget.QFrame()
             icon_container.setFixedHeight(24)
             icon_container.setSizePolicy(widget.QSizePolicy.Policy.Expanding, widget.QSizePolicy.Policy.Fixed)
-            
+
             icon_box = widget.QHBoxLayout(icon_container)
             icon_box.setContentsMargins(0, 0, 0, 0)
             icon_box.setAlignment(core.Qt.AlignmentFlag.AlignCenter)
-            
+
             if item["is_main"] and item["icon"]:
                 icon_label = widget.QLabel()
                 pix = gui.QPixmap(f"media/right_frame/weather_icons_white/{item['icon']}.svg")
                 if not pix.isNull():
                     icon_label.setPixmap(pix.scaled(16, 16, core.Qt.AspectRatioMode.KeepAspectRatio, core.Qt.TransformationMode.SmoothTransformation))
                 icon_box.addWidget(icon_label)
-                    
+
             self.ICON_BARS_LAYOUT.addWidget(icon_container, stretch=1)
 
             col_container = widget.QFrame()
             col_container.setFixedHeight(max_height)
             col_container.setSizePolicy(widget.QSizePolicy.Policy.Expanding, widget.QSizePolicy.Policy.Fixed)
-            
+
             col_box = widget.QVBoxLayout(col_container)
-            col_box.setContentsMargins(0, 0, 0, 0) 
-            
+            col_box.setContentsMargins(0, 0, 0, 0)
+
             column = widget.QFrame()
             calc_h = int(((item["temp"] - min_temp) / temp_range) * max_height)
-            
+
             column.setFixedHeight(max(1, calc_h))
             column.setFixedWidth(10)
-            
+
             column.setStyleSheet("""
                 background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(255, 223, 86, 1), stop:1 rgba(135, 206, 250, 1));
                 border-radius: 2px;
             """)
-            
+
             col_box.addWidget(column, alignment=core.Qt.AlignmentFlag.AlignBottom | core.Qt.AlignmentFlag.AlignHCenter)
             self.COLUMN_LAYOUT.addWidget(col_container, stretch=1)
-        
-        self.update()
 
-   
+        self.update()

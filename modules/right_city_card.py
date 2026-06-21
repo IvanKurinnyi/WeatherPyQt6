@@ -1,11 +1,12 @@
 import PyQt6.QtWidgets as widget
 import PyQt6.QtCore as core
 from PyQt6.QtSvgWidgets import QSvgWidget
-from .api_request import api_request, API_KEY, lang
+from .api_request import api_request, API_KEY, LANG, display_name_for_any
 import PyQt6.QtGui as gui
 from PIL import Image
 from PIL.ImageQt import ImageQt
 from .read_write_json import read_json
+from .translations import t
 
 
 class RightCityCard(widget.QFrame):
@@ -20,17 +21,20 @@ class RightCityCard(widget.QFrame):
                 border-radius: 10px;
             }
         """)
-       
+
+        
+        self._current_city = None
+
         self.LAYOUT = widget.QVBoxLayout(self)
         self.LAYOUT.setContentsMargins(16, 16, 16, 16)
         self.LAYOUT.setSpacing(16)
-        
+
         self.TOP_SECTION = widget.QWidget()
         self.TOP_SECTION_LAYOUT = widget.QVBoxLayout(self.TOP_SECTION)
         self.TOP_SECTION_LAYOUT.setContentsMargins(0, 0, 0, 0)
         self.TOP_SECTION_LAYOUT.setSpacing(8)
 
-        
+
         self.ICON_TEXT_CONTAINER = widget.QWidget()
         self.ICON_TEXT_LAYOUT = widget.QHBoxLayout(self.ICON_TEXT_CONTAINER)
         self.ICON_TEXT_LAYOUT.setContentsMargins(0, 0, 0, 0)
@@ -39,55 +43,51 @@ class RightCityCard(widget.QFrame):
 
         self.TOP_FRAME_ICON = QSvgWidget("media/city_card/navigation.svg")
         self.TOP_FRAME_ICON.setFixedSize(16, 16)
-        
-        if lang == "en":
-            self.TOP_TEXT = widget.QLabel("Сurrent position")
-        else:
-            self.TOP_TEXT = widget.QLabel("Поточна позiцiя")
-            
+
+        self.TOP_TEXT = widget.QLabel(t("current_position"))
         self.TOP_TEXT.setStyleSheet("color: white; font-size: 16px; font-family: 'Roboto'; font-weight: 500;")
-        
+
         self.ICON_TEXT_LAYOUT.addWidget(self.TOP_FRAME_ICON)
         self.ICON_TEXT_LAYOUT.addWidget(self.TOP_TEXT)
-        self.ICON_TEXT_LAYOUT.addStretch() 
+        self.ICON_TEXT_LAYOUT.addStretch()
 
-        
+
         self.LINE = widget.QFrame()
         self.LINE.setFixedHeight(1)
         self.LINE.setStyleSheet("background-color: rgba(255, 255, 255, 0.3);")
 
-        
+
         self.TOP_SECTION_LAYOUT.addWidget(self.ICON_TEXT_CONTAINER)
         self.TOP_SECTION_LAYOUT.addWidget(self.LINE)
-        
-        
-        self.LAYOUT.addWidget(self.TOP_SECTION)
-        
 
-        self.LAYOUT.addStretch() 
+
+        self.LAYOUT.addWidget(self.TOP_SECTION)
+
+
+        self.LAYOUT.addStretch()
         self.CITY_LABEL = widget.QLabel("")
         self.CITY_LABEL.setAlignment(core.Qt.AlignmentFlag.AlignCenter)
         self.LAYOUT.addWidget(self.CITY_LABEL)
-        
-     
+
+
         self.DEGREE_FRAME = widget.QFrame()
         self.DEGREE_LAYOUT = widget.QHBoxLayout(self.DEGREE_FRAME)
         self.DEGREE_LAYOUT.setAlignment(core.Qt.AlignmentFlag.AlignCenter)
-        
+
         self.WEATHER_ICON = widget.QLabel()
         self.TOP_PIXMAP = gui.QPixmap("media/right_frame/Cloudy.svg")
 
-        
+
         self.DEGREE = widget.QLabel("")
-        
+
         self.DEGREE_LAYOUT.addWidget(self.WEATHER_ICON)
         self.DEGREE_LAYOUT.addWidget(self.DEGREE)
-        
+
         self.LAYOUT.addWidget(self.DEGREE_FRAME)
 
         self.STAT_LABEL = widget.QLabel("")
         self.STAT_LABEL.setAlignment(core.Qt.AlignmentFlag.AlignCenter)
-        
+
         self.LAYOUT.addWidget(self.STAT_LABEL)
 
         self.MINMAX_LABEL = widget.QLabel()
@@ -97,26 +97,37 @@ class RightCityCard(widget.QFrame):
 
         self.LAYOUT.addStretch()
 
-    def update_city_data(self, city_name):
-        city_request = api_request(city=city_name, API_KEY=API_KEY, lang=lang)
         
+        LANG.subscribe(self.retranslate_ui)
+
+    def update_city_data(self, city_name):
+        self._current_city = city_name
+
+        city_request = api_request(city=city_name, API_KEY=API_KEY)
+
         temp = str(round(city_request["main"]["temp"]))
         temp_max = str(city_request["main"]["temp_max"])
         temp_min = str(city_request["main"]["temp_min"])
         description:str = city_request["weather"][0]["description"]
         icon_path = f"media/right_frame/weather_icons/{city_request["weather"][0]["icon"]}.svg"
-        self.CITY_LABEL.setText(city_name.capitalize())
+
+        
+        self.CITY_LABEL.setText(display_name_for_any(city_name).capitalize())
         self.DEGREE.setText(temp + "°")
         self.TOP_PIXMAP = gui.QPixmap(icon_path)
         self.change_size()
         self.STAT_LABEL.setText(description.capitalize())
-        if lang == "en":
-            self.MINMAX_LABEL.setText(f"Max.: {temp_max}°, min.: {temp_min}°")
-        else: 
-            self.MINMAX_LABEL.setText(f"Макс.: {temp_max}°, мін.: {temp_min}°")
+        self.MINMAX_LABEL.setText(t("max_min").format(max=temp_max, min=temp_min))
 
+    def retranslate_ui(self):
+        
+        self.TOP_TEXT.setText(t("current_position"))
+        if self._current_city:
+            self.update_city_data(self._current_city)
 
-
+    def closeEvent(self, event):
+        LANG.unsubscribe(self.retranslate_ui)
+        super().closeEvent(event)
 
     def change_size(self):
 
@@ -128,7 +139,7 @@ class RightCityCard(widget.QFrame):
             self.DEGREE.setStyleSheet("font-size: 74px; color: white; font-family: 'Roboto';font-weight: 500; background: none;")
             self.STAT_LABEL.setStyleSheet("font-size: 24px; font-weight: 500; white; font-family: 'Roboto';background: none;")
             self.MINMAX_LABEL.setStyleSheet("font-size: 16px; color: white; font-weight: 500;font-family: 'Roboto'; background: none")
-            
+
         elif settings.get("currentResolution") == ["1440","1024"]:
             self.CITY_LABEL.setStyleSheet("font-size: 60px; font-weight: bold; font-family: 'Roboto'; color: white; background: none;")
             self.WEATHER_ICON.setPixmap(self.TOP_PIXMAP.scaled(210,210, core.Qt.AspectRatioMode.KeepAspectRatio, core.Qt.TransformationMode.SmoothTransformation))
@@ -150,5 +161,3 @@ class RightCityCard(widget.QFrame):
             self.DEGREE.setStyleSheet("font-size: 95px; color: white; font-family: 'Roboto';font-weight: 500; background: none;")
             self.STAT_LABEL.setStyleSheet("font-size: 40px; font-weight: 500; white; font-family: 'Roboto';background: none;")
             self.MINMAX_LABEL.setStyleSheet("font-size: 30px; color: white; font-weight: 500;font-family: 'Roboto'; background: none")
-
-            
