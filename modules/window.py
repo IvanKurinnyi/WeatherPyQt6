@@ -13,7 +13,7 @@ from .forecast_time import ForeCastTime
 from .forecast_graphic import ForeCastGraph
 import requests
 from .read_write_json import read_json, create_json
-from .api_request import lang
+from .api_request import LANG, find_city_obj, get_city_display_name
 
 class MainWindow(widget.QMainWindow):
     def __init__(self, *args, **kwargs):
@@ -26,7 +26,7 @@ class MainWindow(widget.QMainWindow):
             font_family = "Arial"
         else:
             font_family = gui.QFontDatabase.applicationFontFamilies(font_id)[0]
-            
+
 
         self.roboto_font = gui.QFont(font_family, 16, 900)
 
@@ -39,32 +39,32 @@ class MainWindow(widget.QMainWindow):
         self.setGeometry(self.X, self.Y, self.WIDTH, self.HEIGHT)
 
         self.CENTRAL_WIDGET = widget.QWidget()
-        
+
         self.GRADIENT = gui.QLinearGradient(1200, 0, 0, 830)
         self.GRADIENT.setColorAt(0.0, gui.QColor("#FFDF56"))
         self.GRADIENT.setColorAt(1.0, gui.QColor("#87CEFA"))
-        
+
         self.PALETTE = gui.QPalette()
         self.PALETTE.setBrush(gui.QPalette.ColorRole.Window, gui.QBrush(self.GRADIENT))
         self.CENTRAL_WIDGET.setPalette(self.PALETTE)
         self.CENTRAL_WIDGET.setAutoFillBackground(True)
 
         self.setCentralWidget(self.CENTRAL_WIDGET)
-        
+
         self.LAYOUT = widget.QVBoxLayout(self.CENTRAL_WIDGET)
         self.LAYOUT.setContentsMargins(0, 0, 0, 0)
         self.LAYOUT.setSpacing(0)
         self.CENTRAL_WIDGET.setLayout(self.LAYOUT)
 
         self.setWindowFlags(core.Qt.WindowType.FramelessWindowHint)
-        
+
         self.CENTRAL_FRAME = widget.QFrame(self.CENTRAL_WIDGET)
         self.LAYOUT.addWidget(self.CENTRAL_FRAME)
-        
+
         self.TITLE_BAR = TitleBar(self)
         self.TITLE_BAR.setGeometry(0, 0, self.WIDTH, 20)
-        
-        self.TITLE_BAR.raise_() 
+
+        self.TITLE_BAR.raise_()
         self.CENTRAL_LAYOUT = widget.QHBoxLayout(self.CENTRAL_FRAME)
         self.CENTRAL_LAYOUT.setContentsMargins(0, 0, 0, 0)
         self.CENTRAL_LAYOUT.setSpacing(0)
@@ -94,7 +94,7 @@ class MainWindow(widget.QMainWindow):
 
         self.RIGHT_CARDS_FRAME = widget.QFrame(self.RIGHT_FRAME)
         self.RIGHT_LAYOUT.addWidget(self.RIGHT_CARDS_FRAME, stretch=1)
-        
+
         self.RIGHT_CARDS_LAYOUT = widget.QVBoxLayout(self.RIGHT_CARDS_FRAME)
         self.RIGHT_CARDS_FRAME.setLayout(self.RIGHT_CARDS_LAYOUT)
         self.RIGHT_CARDS_LAYOUT.setContentsMargins(0,1,0,37)
@@ -111,10 +111,10 @@ class MainWindow(widget.QMainWindow):
         self.SEARCH_BAR.city_added.connect(self.handle_city_added_dynamically)
         self.SEARCH_BAR.city_removed.connect(self.city_remove)
         self.SEARCH_BAR.city_removed.connect(self.handle_city_removed_dynamically)
-        
-        
-        
-        
+
+
+
+
         self.RIGHT_INFO_FRAME = widget.QFrame(self.RIGHT_CARDS_FRAME)
         self.RIGHT_CARDS_LAYOUT.addWidget(self.RIGHT_INFO_FRAME)
 
@@ -122,16 +122,16 @@ class MainWindow(widget.QMainWindow):
         self.RIGHT_INFO_LAYOUT = widget.QHBoxLayout(self.RIGHT_INFO_FRAME)
         self.RIGHT_INFO_LAYOUT.setContentsMargins(0,0,0,0)
 
-        
+
         self.RIGHT_CITY_CARD = RightCityCard(self.RIGHT_CARDS_FRAME)
         self.RIGHT_CITY_CARD.setFont(self.roboto_font)
         self.RIGHT_INFO_LAYOUT.addWidget(self.RIGHT_CITY_CARD, stretch=1)
-        
+
         self.CITY_TIME_CARD = RightTimeCard(self.RIGHT_CARDS_FRAME)
         self.CITY_TIME_CARD.setFont(self.roboto_font)
         self.RIGHT_INFO_LAYOUT.addWidget(self.CITY_TIME_CARD, stretch=1)
 
-        
+
         self.FORECAST_TIME = ForeCastTime(city_name = "Paris")
         self.RIGHT_CARDS_LAYOUT.addWidget(self.FORECAST_TIME)
 
@@ -146,23 +146,25 @@ class MainWindow(widget.QMainWindow):
         self.SCROLL_AREA.setStyleSheet("background-color: rgba(0,0,0,0); border: none")
         self.LEFT_LAYOUT.addWidget(self.SCROLL_AREA)
         self.SCROLL_AREA.setWidgetResizable(True)
-        
+
         self.SCROLL_FRAME = widget.QFrame(parent=self.SCROLL_AREA)
         self.SCROLL_LAYOUT = widget.QVBoxLayout()
         self.SCROLL_LAYOUT.setContentsMargins(0,0,0,0)
         self.SCROLL_LAYOUT.setSpacing(5)
         self.SCROLL_FRAME.setLayout(self.SCROLL_LAYOUT)
         self.SCROLL_AREA.setWidget(self.SCROLL_FRAME)
-        
+
         self.cards = []
         self.selected_card = None
         current_city = self.city_request()
 
-        city = read_json(name_file=f"city_{lang}.json")
+        
+        self._current_city_canonical = current_city
 
-        
+        city = read_json(name_file=f"city_{LANG.current}.json")
+
         city_list = [current_city]
-        
+
         for i in city:
             city_list.append(i)
 
@@ -180,14 +182,20 @@ class MainWindow(widget.QMainWindow):
                 card.BOTTOM_LINE,
                 alignment=core.Qt.AlignmentFlag.AlignCenter
                 )
-        
+
         self._update_all_lines_visibility()
 
         self.SCROLL_LAYOUT.addStretch(1)
+
         
-    
+        LANG.subscribe(self.retranslate_ui)
+
+    def retranslate_ui(self):
+        
+        pass
+
     def show_city_weather(self, city_name, coordinates="0,0"):
-        self.current_preview_city = city_name 
+        self.current_preview_city = city_name
 
         self.RIGHT_CITY_CARD.update_city_data(city_name)
         self.CITY_TIME_CARD.minute_update(city_name)
@@ -205,7 +213,7 @@ class MainWindow(widget.QMainWindow):
         if self.selected_card:
             self.selected_card.deselect()
             self.selected_card = None
-        
+
     def _on_card_selected(self, card):
         if self.selected_card is not None and self.selected_card != card:
             self.selected_card.deselect()
@@ -215,8 +223,8 @@ class MainWindow(widget.QMainWindow):
         self.CITY_TIME_CARD.minute_update(city_name)
         self.FORECAST_TIME.update_city_time(city_name)
         self.FORECAST_GRAPH.update_forecast(city_name)
-        
-        
+
+
         try:
             self.SEARCH_BAR.update_city_map(city_name)
         except Exception as e:
@@ -229,33 +237,33 @@ class MainWindow(widget.QMainWindow):
         card.setFont(self.roboto_font)
         self.cards.append(card)
         card.selected.connect(lambda c=card: self._on_card_selected(c))
-        
+
         insert_index = self.SCROLL_LAYOUT.count() - 1
 
         self.SCROLL_LAYOUT.insertWidget(insert_index, card)
         self.SCROLL_LAYOUT.insertWidget(insert_index + 1, card.BOTTOM_LINE)
-       
+
         self._update_all_lines_visibility()
-        
+
         try:
             self.SEARCH_BAR.update_city_map(city_name)
         except Exception as e:
             print(f"{e}")
-        
+
         self.show_city_weather(city_name, "0,0")
 
     def update_window_resolution(self, width, height):
-        
+
         self.WIDTH = width
         self.HEIGHT = height
-        
-     
+
+
         self.X = (app.primaryScreen().size().width() - self.WIDTH) // 2
         self.Y = (app.primaryScreen().size().height() - self.HEIGHT) // 2
 
         self.RIGHT_CITY_CARD.change_size()
         self.CITY_TIME_CARD.change_clock()
-        
+
         self.setGeometry(self.X, self.Y, self.WIDTH, self.HEIGHT)
         self.TITLE_BAR.setGeometry(0, 0, self.WIDTH, 20)
 
@@ -263,25 +271,10 @@ class MainWindow(widget.QMainWindow):
         try:
             data = requests.get("https://ipinfo.io/json", timeout=5).json()
             city = data.get("city", "Dnipro").strip()
-            if lang == "ua":
-                try:
-                    cities = read_json("cities.json")
-                    target = city.casefold()
-                    if isinstance(cities, list):
-                        for item in cities:
-                            if not isinstance(item, dict):
-                                continue
-                            name = (item.get("name") or "").strip()
-                            native = (item.get("native") or "").strip()
-                            if name.casefold() == target or native.casefold() == target:
-                                trans = item.get("translations") or {}
-                                if isinstance(trans, dict):
-                                    uk = trans.get("uk") or trans.get("ua")
-                                    if uk:
-                                        return uk
-                                return name or city
-                except Exception:
-                    pass
+            
+            city_obj = find_city_obj(city)
+            if city_obj:
+                return get_city_display_name(city_obj)
             return " ".join(part.capitalize() for part in city.split())
         except Exception:
             return "Dnipro"
@@ -310,30 +303,27 @@ class MainWindow(widget.QMainWindow):
             card.update_line_visibility(is_multiple_cities)
 
     def handle_city_added_dynamically(self, city_name):
-        
+
         for card in self.cards:
             if card.city_name.lower() == city_name.lower():
                 return
-                
-       
+
+
         card = Card(parent=self.SCROLL_FRAME, city_name=city_name, scroll_frame=self.SCROLL_FRAME)
         self.cards.append(card)
-        
-       
+
+
         self.SCROLL_LAYOUT.addWidget(card)
         self.SCROLL_LAYOUT.addWidget(card.BOTTOM_LINE)
-        
-        
+
+
         self._update_all_lines_visibility()
 
     def handle_city_removed_dynamically(self, city_name):
-       
-        self.SEARCH_BAR.remove_city_everywhere(city_name)
-        
-        self.city_remove(city_name)
 
-    
+        self.SEARCH_BAR.remove_city_everywhere(city_name)
+
+        self.city_remove(city_name)
 
 
 window = MainWindow()
-        
