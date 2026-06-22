@@ -27,7 +27,6 @@ class MainWindow(widget.QMainWindow):
         else:
             font_family = gui.QFontDatabase.applicationFontFamilies(font_id)[0]
 
-
         self.roboto_font = gui.QFont(font_family, 16, 900)
 
         json_res = read_json(name_file="settings.json")
@@ -111,9 +110,7 @@ class MainWindow(widget.QMainWindow):
         self.SEARCH_BAR.city_added.connect(self.handle_city_added_dynamically)
         self.SEARCH_BAR.city_removed.connect(self.city_remove)
         self.SEARCH_BAR.city_removed.connect(self.handle_city_removed_dynamically)
-
-
-
+        self.SEARCH_BAR.style_changed.connect(self.refresh_icon)
 
         self.RIGHT_INFO_FRAME = widget.QFrame(self.RIGHT_CARDS_FRAME)
         self.RIGHT_CARDS_LAYOUT.addWidget(self.RIGHT_INFO_FRAME)
@@ -160,6 +157,7 @@ class MainWindow(widget.QMainWindow):
 
         
         self._current_city_canonical = current_city
+        self.current_preview_city = current_city 
 
         city = read_json(name_file=f"city_{LANG.current}.json")
 
@@ -324,6 +322,14 @@ class MainWindow(widget.QMainWindow):
         self.SEARCH_BAR.remove_city_everywhere(city_name)
 
         self.city_remove(city_name)
+        
+    def refresh_icon(self):
+        from .icon_finder import clear_cache
+        clear_cache()
+        core.QTimer.singleShot(50, self._do_refresh_icon)
 
+    def _do_refresh_icon(self):
+        if hasattr(self, "current_preview_city"):
+            self.RIGHT_CITY_CARD.refresh_icon()
 
 window = MainWindow()

@@ -75,7 +75,7 @@ TRANSLATIONS = {
         "choose_language": "Оберіть мову додатку",
         "language_label": "Mовa додатку",
         "list_of_images": "Списки зображень",
-        "images_list_n": "Cписок зображень №{n}",
+        "images_list_n": "Cписок зображень {n}",
     },
 }
 
@@ -129,8 +129,16 @@ class LangState:
 
 
 def t(key: str) -> str:
-    
-    return TRANSLATIONS[LANG.current][key]
+    try:
+        lang_dict = TRANSLATIONS.get(LANG.current, {})
+        value = lang_dict.get(key)
+        if value is None:
+            value = TRANSLATIONS.get("en", {}).get(key)
+        if value is None:
+            return key
+        return value
+    except Exception:
+        return key
 
 
 def weekday_name(index: int) -> str:

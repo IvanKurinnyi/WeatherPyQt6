@@ -3,12 +3,13 @@ import PyQt6.QtWebEngineWidgets as web_engine
 import PyQt6.QtCore as core
 import PyQt6.QtGui as gui
 from PyQt6.QtSvgWidgets import QSvgWidget
-import folium, io
+import folium, io, os
 from .find_town import find_cities_by_prefix
 from .read_write_json import create_json, read_json
 from .combobox import ComboBox
 from .api_request import get_coordinates, LANG, api_request, API_KEY, get_city_display_name, find_city_obj
 from .translations import t
+from .icon_finder import svg_to_pixmap
 
 class SearchBar(widget.QFrame):
     city_selected = core.pyqtSignal(str, str)
@@ -16,6 +17,7 @@ class SearchBar(widget.QFrame):
     city_removed = core.pyqtSignal(str)
     resolution_changed = core.pyqtSignal(int, int)
     language_changed = core.pyqtSignal(str)
+    style_changed = core.pyqtSignal()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -545,112 +547,76 @@ class SearchBar(widget.QFrame):
 
         self.IMG_LIST_FRAME = widget.QFrame(self.RIGHT_FRAME)
         self.IMG_LIST_LAYOUT = widget.QVBoxLayout(self.IMG_LIST_FRAME)
-        self.IMG_LIST_LAYOUT.setContentsMargins(0,0,0,0)
-        self.IMG_LIST_LAYOUT.setSpacing(24)
+        self.IMG_LIST_LAYOUT.setContentsMargins(0, 0, 0, 0)
+        self.IMG_LIST_LAYOUT.setSpacing(16)
 
-
+        self.IMG_LIST_LABEL = widget.QLabel(t("list_of_images"), self.IMG_LIST_FRAME)
+        self.IMG_LIST_LABEL.setStyleSheet(
+            "background-color: none; color: white; font-size: 18px; font-weight: 400;"
+        )
+        self.IMG_LIST_LAYOUT.addWidget(self.IMG_LIST_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
 
         self.ADD_STYLE_BUTTON = widget.QPushButton()
         self.ADD_STYLE_BUTTON.setFixedSize(core.QSize(97, 36))
         self.ADD_STYLE_BUTTON.setStyleSheet("""
             QPushButton {
-                background-color: rgba(0, 0, 0, 0.2); 
-                border-radius: 4px;
-                border: none;
+                background-color: rgba(0, 0, 0, 0.2);
+                border-radius: 4px; border: none;
             }
-            QPushButton:hover {
-                background-color: rgba(255, 255, 255, 0.1);
-            }
+            QPushButton:hover { background-color: rgba(255, 255, 255, 0.1); }
         """)
-
-        self.STYLE_BUTTON_LAYOUT = widget.QHBoxLayout(self.ADD_STYLE_BUTTON)
-        self.STYLE_BUTTON_LAYOUT.setContentsMargins(10, 0, 10, 0)
-        self.STYLE_BUTTON_LAYOUT.setSpacing(6)
-        self.STYLE_BUTTON_LAYOUT.setAlignment(core.Qt.AlignmentFlag.AlignCenter)
-
-        self.IMG_LIST_LABEL = widget.QLabel(t("list_of_images"), self.IMG_LIST_FRAME)
-        self.IMG_LIST_LABEL.setStyleSheet("background-color: none; color: white; font-size: 18px; font-weight: 400;")
-        self.IMG_LIST_LAYOUT.addWidget(self.IMG_LIST_LABEL, alignment=core.Qt.AlignmentFlag.AlignLeft)
-
+        _add_btn_layout = widget.QHBoxLayout(self.ADD_STYLE_BUTTON)
+        _add_btn_layout.setContentsMargins(10, 0, 10, 0)
+        _add_btn_layout.setSpacing(6)
+        _add_btn_layout.setAlignment(core.Qt.AlignmentFlag.AlignCenter)
         self.ADD_ICON_BUTTON = QSvgWidget("media/search_bar/plus.svg", self.ADD_STYLE_BUTTON)
         self.ADD_ICON_BUTTON.setFixedSize(core.QSize(16, 16))
-
         self.ADD_TEXT_BUTTON = widget.QLabel(t("add"), self.ADD_STYLE_BUTTON)
-        self.ADD_TEXT_BUTTON.setStyleSheet("color: white; font-size: 14px; font-weight: 500; background: none;")
+        self.ADD_TEXT_BUTTON.setStyleSheet(
+            "color: white; font-size: 14px; font-weight: 500; background: none;"
+        )
+        _add_btn_layout.addWidget(self.ADD_ICON_BUTTON)
+        _add_btn_layout.addWidget(self.ADD_TEXT_BUTTON)
+        self.IMG_LIST_LAYOUT.addWidget(self.ADD_STYLE_BUTTON, alignment=core.Qt.AlignmentFlag.AlignLeft)
+        self.ADD_STYLE_BUTTON.clicked.connect(self.add_style_folder)
 
-        self.STYLE_BUTTON_LAYOUT.addWidget(self.ADD_ICON_BUTTON)
-        self.STYLE_BUTTON_LAYOUT.addWidget(self.ADD_TEXT_BUTTON)
-        self.IMG_LIST_LAYOUT.addWidget(self.ADD_STYLE_BUTTON)
-        # self.ADD_STYLE_BUTTON.clicked.connect(self.add_styles)
+        self.STYLES_SCROLL = widget.QScrollArea()
+        self.STYLES_SCROLL.setFixedSize(core.QSize(544, 320))
+        self.STYLES_SCROLL.setWidgetResizable(True)
+        self.STYLES_SCROLL.setVerticalScrollBarPolicy(core.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.STYLES_SCROLL.setStyleSheet(
+            "QScrollArea { background: transparent; border: none; }"
+            "QScrollArea > QWidget > QWidget { background: transparent; }"
+        )
 
+        self.STYLES_CONTAINER = widget.QFrame()
+        self.STYLES_CONTAINER.setStyleSheet("background: transparent;")
+        self.STYLES_CONTAINER_LAYOUT = widget.QVBoxLayout(self.STYLES_CONTAINER)
+        self.STYLES_CONTAINER_LAYOUT.setContentsMargins(0, 0, 0, 0)
+        self.STYLES_CONTAINER_LAYOUT.setSpacing(16)
+        self.STYLES_CONTAINER_LAYOUT.setAlignment(core.Qt.AlignmentFlag.AlignTop)
+        self.STYLES_SCROLL.setWidget(self.STYLES_CONTAINER)
+        self.IMG_LIST_LAYOUT.addWidget(self.STYLES_SCROLL)
 
-        self.STYLES_FRAME = widget.QFrame()
-        self.STYLES_FRAME.setFixedSize(core.QSize(490,282))
-        self.STYLES_FRAME_LAYOUT = widget.QVBoxLayout(self.STYLES_FRAME)
-        self.STYLES_FRAME_LAYOUT.setContentsMargins(0,0,0,0)
-        self.STYLE_BUTTON_LAYOUT.setSpacing(10)
-
-        
-        all_images = read_json("img_list.json")
-
-        
-        self._img_list_number_labels = []
-
-        for i in all_images:
-            style_list = widget.QFrame(self.STYLES_FRAME)
-            style_list.setFixedSize(core.QSize(490,136))
-            style_list.setStyleSheet("background-color: none; border-radius: 4px")
-            style_list_layout = widget.QVBoxLayout(style_list)
-            style_list_layout.setContentsMargins(16,16,16,16)
-            style_list_layout.setSpacing(16)
-
-            number_img = widget.QLabel(t("images_list_n").format(n=i), style_list)
-            number_img.setFixedSize(core.QSize(300,14))
-            number_img.setStyleSheet("font-weight:500; font-size:14px; background-color: none")
-            style_list_layout.addWidget(number_img)
-            self._img_list_number_labels.append((number_img, i))
-
-            style_img_frame = widget.QFrame(style_list)
-            style_img_frame.setStyleSheet("background-color: none")
-            style_img_frame.setFixedSize(core.QSize(458, 74))
-            style_list_layout.addWidget(style_img_frame)
-
-            style_img_layout = widget.QHBoxLayout(style_img_frame)
-            style_img_layout.setContentsMargins(0, 0, 0, 0)
-            style_img_layout.setSpacing(16)
-
-            for img in range(5):
-                img_frame = widget.QFrame()
-                img_frame.setFixedSize(core.QSize(74,74))
-                img_frame.setStyleSheet("background-color: rgba(255, 255, 255, 0.2); border-radius: 10px")
-                style_img_layout.addWidget(img_frame, alignment=core.Qt.AlignmentFlag.AlignCenter)
-
-
-            self.STYLES_FRAME_LAYOUT.addWidget(style_list)
-
-        self.IMG_LIST_LAYOUT.addWidget(self.STYLES_FRAME)
-
-
-
-        self.SAVE_STYLE_BUTTON = widget.QPushButton(t("save"), self.COUNTRY_FRAME)
+        self.SAVE_STYLE_BUTTON = widget.QPushButton(t("save"))
         self.SAVE_STYLE_BUTTON.setStyleSheet("""
             QPushButton {
-                background-color: rgba(0, 0, 0, 0.2); 
-                border-radius: 4px;
-                border: none;
-                padding: 6px 12px;
+                background-color: rgba(0, 0, 0, 0.2);
+                border-radius: 4px; border: none; padding: 6px 12px;
             }
-            QPushButton:hover {
-                background-color: rgba(255, 255, 255, 0.1);
-            }
+            QPushButton:hover { background-color: rgba(255, 255, 255, 0.1); }
         """)
-
         self.SAVE_STYLE_BUTTON.setFixedSize(core.QSize(105, 38))
-        self.SAVE_STYLE_BUTTON.clicked.connect(self.save_selected_city)
-        self.IMG_LIST_LAYOUT.addWidget(self.SAVE_STYLE_BUTTON)
+        self.SAVE_STYLE_BUTTON.clicked.connect(self.save_style)
+        self.IMG_LIST_LAYOUT.addWidget(self.SAVE_STYLE_BUTTON, alignment=core.Qt.AlignmentFlag.AlignLeft)
 
+        self._selected_style: str | None = None   
+        self._style_row_frames: dict[str, widget.QFrame] = {}  
+        self._img_list_number_labels: list = []  
+
+        self._build_img_list_ui()
         self.IMG_LIST_FRAME.hide()
-
+        
         self.SETTINGS.clicked.connect(self.show_settings)
         self.CLOSE_BUTTON.clicked.connect(self.close_settings)
         self.CITY_SEARCH.clicked.connect(self.city_search)
@@ -1198,6 +1164,186 @@ class SearchBar(widget.QFrame):
 
         create_json(new_cities_en, "city_en.json")
         create_json(new_cities_ua, "city_ua.json")
+        
+    _PREVIEW_ICONS = ["01d", "02d", "03d", "04d", "09d"]
+
+    def _get_preview_icons(self, folder_path: str) -> list[str]:
+        """Возвращает список путей к иконкам для превью (5 штук).
+        Если в папке нет нужного файла — берёт дефолтный из weather_icons."""
+        result = []
+        default_base = os.path.join("media", "right_frame", "weather_icons")
+        for name in self._PREVIEW_ICONS:
+            candidate = os.path.join(folder_path, f"{name}.svg")
+            if os.path.exists(candidate):
+                result.append(candidate)
+            else:
+                fallback = os.path.join(default_base, f"{name}.svg")
+                result.append(fallback if os.path.exists(fallback) else "")
+        return result
+
+    def _build_img_list_ui(self):
+        """Пересобирает весь список рядов иконок из img_list.json."""
+        # Очищаем старые ряды
+        while self.STYLES_CONTAINER_LAYOUT.count():
+            item = self.STYLES_CONTAINER_LAYOUT.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        self._style_row_frames.clear()
+        self._img_list_number_labels.clear()
+
+        try:
+            img_list: list[str] = read_json("img_list.json")
+        except Exception:
+            img_list = []
+
+        settings = read_json("settings.json")
+        current_style = settings.get("current_img_list", "weather_icons")
+
+        for folder_name in img_list:
+            self._add_style_row(folder_name, current_style)
+
+        # Если текущий стиль не выбран визуально — выберем первый
+        if self._selected_style is None and img_list:
+            self._select_style(img_list[0])
+
+    def _add_style_row(self, folder_name: str, active_folder: str | None = None):
+        """Добавляет один ряд иконок в STYLES_CONTAINER."""
+        folder_path = os.path.join("media", "right_frame", folder_name)
+        icon_paths = self._get_preview_icons(folder_path)
+
+        is_active = (folder_name == active_folder)
+
+        row_frame = widget.QFrame()
+        row_frame.setFixedSize(core.QSize(530, 120))
+        row_frame.setStyleSheet(
+            "QFrame { background-color: rgba(255,255,255,0.08); border-radius: 8px;"
+            " border: 2px solid rgba(255,255,255,0.35); }"
+            if is_active else
+            "QFrame { background-color: rgba(255,255,255,0.04); border-radius: 8px;"
+            " border: 2px solid transparent; }"
+        )
+        row_frame.setCursor(core.Qt.CursorShape.PointingHandCursor)
+
+        row_layout = widget.QVBoxLayout(row_frame)
+        row_layout.setContentsMargins(12, 8, 12, 8)
+        row_layout.setSpacing(6)
+
+        lbl = widget.QLabel(t("images_list_n").format(n=folder_name))
+        lbl.setStyleSheet("font-weight:500; font-size:13px; background:none; border:none; color:white;")
+        row_layout.addWidget(lbl)
+        self._img_list_number_labels.append((lbl, folder_name))
+
+        icons_frame = widget.QFrame()
+        icons_frame.setStyleSheet("background:none; border:none;")
+        icons_layout = widget.QHBoxLayout(icons_frame)
+        icons_layout.setContentsMargins(0, 0, 0, 0)
+        icons_layout.setSpacing(8)
+
+        for path in icon_paths:
+            cell = widget.QFrame()
+            cell.setFixedSize(core.QSize(74, 74))
+            cell.setStyleSheet(
+                "background-color: rgba(255,255,255,0.15); border-radius: 10px; border:none;"
+            )
+            cell_layout = widget.QVBoxLayout(cell)
+            cell_layout.setContentsMargins(8, 8, 8, 8)
+
+            lbl = widget.QLabel(cell)
+            lbl.setFixedSize(core.QSize(58, 58))
+            lbl.setStyleSheet("background:none; border:none;")
+            lbl.setAlignment(core.Qt.AlignmentFlag.AlignCenter)
+            px = svg_to_pixmap(path, 58)
+            if px and not px.isNull():
+                lbl.setPixmap(px)
+            cell_layout.addWidget(lbl, alignment=core.Qt.AlignmentFlag.AlignCenter)
+
+            icons_layout.addWidget(cell)
+
+        icons_layout.addStretch(1)
+        row_layout.addWidget(icons_frame)
+
+        # клик по ряду — выбор набора
+        row_frame.mousePressEvent = lambda _ev, fn=folder_name: self._select_style(fn)
+
+        self.STYLES_CONTAINER_LAYOUT.addWidget(row_frame)
+        self._style_row_frames[folder_name] = row_frame
+
+        if is_active:
+            self._selected_style = folder_name
+
+    def _select_style(self, folder_name: str):
+        """Визуально выделяет выбранный ряд."""
+        self._selected_style = folder_name
+        for fn, frame in self._style_row_frames.items():
+            if fn == folder_name:
+                frame.setStyleSheet(
+                    "QFrame { background-color: rgba(255,255,255,0.08); border-radius: 8px;"
+                    " border: 2px solid rgba(255,255,255,0.35); }"
+                )
+            else:
+                frame.setStyleSheet(
+                    "QFrame { background-color: rgba(255,255,255,0.04); border-radius: 8px;"
+                    " border: 2px solid transparent; }"
+                )
+
+    def add_style_folder(self):
+        """Диалог выбора папки с иконками, проверка и добавление в img_list.json."""
+        folder_path = widget.QFileDialog.getExistingDirectory(
+            self, t("choose_folder") if "choose_folder" in dir() else "Choose folder"
+        )
+        if not folder_path:
+            return
+
+        # Проверяем — есть ли хоть одна иконка с правильным именем
+        valid_names = {
+            "01d","01n","02d","02n","03d","03n","04d","04n",
+            "09d","09n","10d","10n","11d","11n","13d","13n","50d","50n"
+        }
+        found = any(
+            os.path.exists(os.path.join(folder_path, f"{n}.svg"))
+            for n in valid_names
+        )
+        if not found:
+            widget.QMessageBox.warning(
+                self, "Error",
+                "No valid weather icons found in selected folder.\n"
+                "Expected files like: 01d.svg, 02d.svg, etc."
+            )
+            return
+
+        # Имя набора = имя папки
+        folder_name = os.path.basename(folder_path)
+
+        # Если папка не в media/right_frame — копируем туда
+        target_base = os.path.join("media", "right_frame")
+        target_path = os.path.join(target_base, folder_name)
+        if os.path.abspath(folder_path) != os.path.abspath(target_path):
+            import shutil
+            if not os.path.exists(target_path):
+                shutil.copytree(folder_path, target_path)
+
+        try:
+            img_list: list[str] = read_json("img_list.json")
+        except Exception:
+            img_list = []
+
+        if folder_name not in img_list:
+            img_list.append(folder_name)
+            from .read_write_json import create_json
+            create_json(img_list, "img_list.json")
+
+        if folder_name not in self._style_row_frames:
+            self._add_style_row(folder_name)
+
+    def save_style(self):
+        if not self._selected_style:
+            return
+        settings = read_json("settings.json")
+        settings["current_img_list"] = self._selected_style
+        from .read_write_json import create_json
+        create_json(settings, "settings.json")
+        self.style_changed.emit()  # ← добавь эту строку
+        self.close_settings()
 
     def retranslate_ui(self):
         
@@ -1228,8 +1374,8 @@ class SearchBar(widget.QFrame):
         self.IMG_LIST_LABEL.setText(t("list_of_images"))
         self.ADD_TEXT_BUTTON.setText(t("add"))
         self.SAVE_STYLE_BUTTON.setText(t("save"))
-        for label, n in self._img_list_number_labels:
-            label.setText(t("images_list_n").format(n=n))
+        for label, folder_name in self._img_list_number_labels:
+            label.setText(t("images_list_n").format(n=folder_name))
 
         self.SAVE_MAP_BUTTON.setText(t("save"))
         self.SAVE_STYLE_BUTTON.setText(t("save"))
@@ -1287,3 +1433,13 @@ class SearchBar(widget.QFrame):
         self.CITIES_LIST = target_list
         for city in target_list:
             self.update_added_cities(city)
+            
+    def save_style(self):
+        if not self._selected_style:
+            return
+        settings = read_json("settings.json")
+        settings["current_img_list"] = self._selected_style
+        from .read_write_json import create_json
+        create_json(settings, "settings.json")
+        self.style_changed.emit()
+        self.close_settings()        
