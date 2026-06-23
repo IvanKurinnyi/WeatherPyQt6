@@ -64,7 +64,7 @@ Ensure you have Python 3.10+ installed on your operating system.
 
 1. **Clone the repository:**
 ```bash
-git clone [https://github.com/IvanKurinnyi/WeatherPyQt6.git](https://github.com/IvanKurinnyi/WeatherPyQt6.git)
+git clone https://github.com/IvanKurinnyi/WeatherPyQt6.git
 
 ```
 
@@ -212,7 +212,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 1. **Клонуйте репозиторій із кодом проєкту:**
 
 ```bash
-git clone [https://github.com/IvanKurinnyi/WeatherPyQt6.git](https://github.com/IvanKurinnyi/WeatherPyQt6.git)
+git clone https://github.com/IvanKurinnyi/WeatherPyQt6.git
 
 ```
 
