@@ -1,4 +1,4 @@
-```markdown
+
 # 🌦️ Weather App (PyQt6)
 
 
