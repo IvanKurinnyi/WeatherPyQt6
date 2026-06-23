@@ -57,7 +57,7 @@ The project provides accurate, real-time weather data with a clean interface.
 ## ⚙️ Configuration
 
 Get your API key from OpenWeatherAPI
-and add it in the app configuration file.
+and add it in the app configuration file (.env)
 
 Example:
 
@@ -161,7 +161,7 @@ MIT License
 ## ⚙️ Налаштування
 
 Отримайте API-ключ у сервісі погоди OpenWeatherAPI
-і додайте його у файл конфігурації застосунку.
+і додайте його у файл конфігурації застосунку (.env)
 
 Приклад:
 
