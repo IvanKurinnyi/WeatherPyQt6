@@ -1,6 +1,7 @@
 import PyQt6.QtWidgets as widget
 import PyQt6.QtCore as core
 import PyQt6.QtGui as gui
+from .read_write_json import read_json
 
 class ToggleSwitch(widget.QFrame):
     TOGGLED = core.pyqtSignal(bool)
@@ -31,6 +32,15 @@ class ToggleSwitch(widget.QFrame):
         self.ANIMATION = core.QPropertyAnimation(self.ICON_LABEL, b"pos")
         self.ANIMATION.setDuration(250)
         self.ANIMATION.setEasingCurve(core.QEasingCurve.Type.OutCubic)
+
+        try:
+            settings = read_json(name_file="settings.json")
+            saved_state = settings.get("darkMode", True)
+            if saved_state:
+                self.IS_CHECKED = False
+                self.update_icon()
+        except Exception:
+            pass
 
     def mousePressEvent(self, event):
         self.IS_CHECKED = not self.IS_CHECKED

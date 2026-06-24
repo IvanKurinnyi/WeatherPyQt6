@@ -932,10 +932,26 @@ class SearchBar(widget.QFrame):
     def delete_city(self, city_name):
         city_name = city_name.strip()
 
+        
+        city_en_name = city_name
+        city_ua_name = city_name
+
+        for city_obj in self.CITIES_DATA:
+            if not isinstance(city_obj, dict):
+                continue
+            name_en = city_obj.get("name", "")
+            translations = city_obj.get("translations")
+            name_ua = translations.get("uk", "") if isinstance(translations, dict) else ""
+
+            if city_name.lower() in [name_en.lower(), name_ua.lower()]:
+                city_en_name = name_en
+                city_ua_name = name_ua if name_ua else name_en
+                break
+
         for file_name in ["city.json", "city_en.json", "city_ua.json"]:
             try:
                 cities = read_json(file_name)
-                cities = [c for c in cities if c.lower() != city_name.lower()]
+                cities = [c for c in cities if c.lower() not in [city_en_name.lower(), city_ua_name.lower()]]
                 create_json(cities, file_name)
             except:
                 pass
@@ -951,7 +967,11 @@ class SearchBar(widget.QFrame):
                 pass
 
         self.CITIES_LIST = [c for c in self.CITIES_LIST if c.lower() != city_name.lower()]
-        self.city_removed.emit(city_name)
+
+        
+        self.city_removed.emit(city_en_name)
+        if city_ua_name.lower() != city_en_name.lower():
+            self.city_removed.emit(city_ua_name)
 
     def update_added_cities(self, city_name):
         if city_name.lower() in self.added_city_frames:
@@ -1018,7 +1038,7 @@ class SearchBar(widget.QFrame):
 
             return gui.QPixmap.fromImage(img)
         except Exception as e:
-            print(f"[BLUR] Error while blurring pixmap: {e}")
+            print(f"Error while blurring pixmap: {e}")
             return pixmap
 
     def update_city_map(self, city_name):
@@ -1027,7 +1047,7 @@ class SearchBar(widget.QFrame):
 
         coords = self.get_coords(city_name)
         if not coords:
-            print("[MAP] City not found in JSON")
+            print("City not found in JSON")
             return
 
         lat, lon = coords
@@ -1168,8 +1188,6 @@ class SearchBar(widget.QFrame):
     _PREVIEW_ICONS = ["01d", "02d", "03d", "04d", "09d"]
 
     def _get_preview_icons(self, folder_path: str) -> list[str]:
-        """Возвращает список путей к иконкам для превью (5 штук).
-        Если в папке нет нужного файла — берёт дефолтный из weather_icons."""
         result = []
         default_base = os.path.join("media", "right_frame", "weather_icons")
         for name in self._PREVIEW_ICONS:
@@ -1182,8 +1200,6 @@ class SearchBar(widget.QFrame):
         return result
 
     def _build_img_list_ui(self):
-        """Пересобирает весь список рядов иконок из img_list.json."""
-        # Очищаем старые ряды
         while self.STYLES_CONTAINER_LAYOUT.count():
             item = self.STYLES_CONTAINER_LAYOUT.takeAt(0)
             if item.widget():
@@ -1202,12 +1218,12 @@ class SearchBar(widget.QFrame):
         for folder_name in img_list:
             self._add_style_row(folder_name, current_style)
 
-        # Если текущий стиль не выбран визуально — выберем первый
+        
         if self._selected_style is None and img_list:
             self._select_style(img_list[0])
 
     def _add_style_row(self, folder_name: str, active_folder: str | None = None):
-        """Добавляет один ряд иконок в STYLES_CONTAINER."""
+        
         folder_path = os.path.join("media", "right_frame", folder_name)
         icon_paths = self._get_preview_icons(folder_path)
 
@@ -1262,7 +1278,7 @@ class SearchBar(widget.QFrame):
         icons_layout.addStretch(1)
         row_layout.addWidget(icons_frame)
 
-        # клик по ряду — выбор набора
+       
         row_frame.mousePressEvent = lambda _ev, fn=folder_name: self._select_style(fn)
 
         self.STYLES_CONTAINER_LAYOUT.addWidget(row_frame)
@@ -1272,7 +1288,7 @@ class SearchBar(widget.QFrame):
             self._selected_style = folder_name
 
     def _select_style(self, folder_name: str):
-        """Визуально выделяет выбранный ряд."""
+       
         self._selected_style = folder_name
         for fn, frame in self._style_row_frames.items():
             if fn == folder_name:
@@ -1287,14 +1303,14 @@ class SearchBar(widget.QFrame):
                 )
 
     def add_style_folder(self):
-        """Диалог выбора папки с иконками, проверка и добавление в img_list.json."""
+       
         folder_path = widget.QFileDialog.getExistingDirectory(
             self, t("choose_folder") if "choose_folder" in dir() else "Choose folder"
         )
         if not folder_path:
             return
 
-        # Проверяем — есть ли хоть одна иконка с правильным именем
+       
         valid_names = {
             "01d","01n","02d","02n","03d","03n","04d","04n",
             "09d","09n","10d","10n","11d","11n","13d","13n","50d","50n"
@@ -1311,10 +1327,10 @@ class SearchBar(widget.QFrame):
             )
             return
 
-        # Имя набора = имя папки
+       
         folder_name = os.path.basename(folder_path)
 
-        # Если папка не в media/right_frame — копируем туда
+        
         target_base = os.path.join("media", "right_frame")
         target_path = os.path.join(target_base, folder_name)
         if os.path.abspath(folder_path) != os.path.abspath(target_path):
@@ -1342,7 +1358,7 @@ class SearchBar(widget.QFrame):
         settings["current_img_list"] = self._selected_style
         from .read_write_json import create_json
         create_json(settings, "settings.json")
-        self.style_changed.emit()  # ← добавь эту строку
+        self.style_changed.emit()  
         self.close_settings()
 
     def retranslate_ui(self):

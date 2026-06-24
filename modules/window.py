@@ -89,6 +89,8 @@ class MainWindow(widget.QMainWindow):
 
 
         self.TOGGLE_SWITCH = ToggleSwitch(self.LEFT_FRAME)
+        self.TOGGLE_SWITCH.TOGGLED.connect(self.on_theme_toggled)
+
         self.LEFT_LAYOUT.addWidget(self.TOGGLE_SWITCH, alignment=core.Qt.AlignmentFlag.AlignRight)
 
         self.RIGHT_CARDS_FRAME = widget.QFrame(self.RIGHT_FRAME)
@@ -331,5 +333,30 @@ class MainWindow(widget.QMainWindow):
     def _do_refresh_icon(self):
         if hasattr(self, "current_preview_city"):
             self.RIGHT_CITY_CARD.refresh_icon()
+            
+    def on_theme_toggled(self, is_dark: bool):
+        try:
+            from .read_write_json import read_json, create_json
+            settings = read_json(name_file="settings.json")
+            settings["darkMode"] = is_dark
+            create_json(name_file="settings.json", data=settings)
+        except Exception as e:
+            print(f"Ошибка сохранения настроек: {e}")
+
+        self.GRADIENT = gui.QLinearGradient(1200, 0, 0, 830)
+        if is_dark:
+            self.GRADIENT.setColorAt(0.0, gui.QColor("#808080"))
+            self.GRADIENT.setColorAt(1.0, gui.QColor("#5DADE2"))
+        else:
+            self.GRADIENT.setColorAt(0.0, gui.QColor("#FFDF56"))
+            self.GRADIENT.setColorAt(1.0, gui.QColor("#87CEFA"))
+
+        self.PALETTE.setBrush(gui.QPalette.ColorRole.Window, gui.QBrush(self.GRADIENT))
+        self.CENTRAL_WIDGET.setPalette(self.PALETTE)
+
+        # if is_dark:
+        #     self.LEFT_FRAME.setStyleSheet("background-color: rgba(255,255,255,0.1)")
+        # else:
+        #     self.LEFT_FRAME.setStyleSheet("background-color: rgba(0,0,0,0.4)")
 
 window = MainWindow()
